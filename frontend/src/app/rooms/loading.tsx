@@ -1,0 +1,1 @@
+export default function Loading() { return <main className="grid min-h-screen place-items-center bg-[#17352d] text-white"><p className="animate-pulse text-sm tracking-[.2em] uppercase">Preparing the rooms…</p></main>; }

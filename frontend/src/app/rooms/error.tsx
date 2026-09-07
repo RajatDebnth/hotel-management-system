@@ -1,0 +1,2 @@
+"use client";
+export default function ErrorState({ reset }: { reset: () => void }) { return <main className="grid min-h-screen place-items-center bg-[#f6f2e9] p-6"><div className="max-w-md text-center"><p className="eyebrow text-[#947039]">A moment, please</p><h1 className="mt-4 font-heading text-5xl">We couldn&apos;t prepare the rooms.</h1><p className="mt-5 text-[#68746e]">The hotel service may be restarting. Please try once more.</p><button onClick={reset} className="mt-7 rounded-full bg-[#17352d] px-6 py-3 font-semibold text-white">Try again</button></div></main>; }

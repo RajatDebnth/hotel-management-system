@@ -1,0 +1,9 @@
+import { ArrowUpRight, Users } from "lucide-react";
+import Link from "next/link";
+import type { CatalogRoom } from "@/lib/api";
+
+const tones = ["from-[#56715c] via-[#879b7f] to-[#d6c5a5]", "from-[#263b35] via-[#607269] to-[#c7a66b]", "from-[#8b6c52] via-[#b29574] to-[#e8d8bc]"];
+export function RoomCard({ room, index = 0 }: { room: CatalogRoom; index?: number }) {
+  const size = room.room_size_sq_m ? `${Number(room.room_size_sq_m)} m²` : "Comfortable layout";
+  return <article className="group overflow-hidden rounded-[2rem] bg-white shadow-[0_20px_60px_-40px_rgba(20,49,40,.45)]"><div className={`room-art relative aspect-[4/3] bg-gradient-to-br ${tones[index % tones.length]}`}><div className="absolute inset-x-8 bottom-7 h-28 rounded-t-[5rem] border border-white/30 bg-white/10 backdrop-blur-sm" /><span className="absolute left-5 top-5 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[#17352d]">{room.available_room_count} rooms</span></div><div className="p-6 sm:p-7"><div className="flex items-start justify-between gap-5"><div><h2 className="font-heading text-3xl text-[#17352d]">{room.name}</h2><p className="mt-2 text-sm leading-6 text-[#5e6e67]">{room.description}</p></div><Link href={`/rooms/${room.slug}`} aria-label={`View ${room.name}`} className="grid size-11 shrink-0 place-items-center rounded-full border border-[#c9d2ca] text-[#17352d] transition group-hover:bg-[#17352d] group-hover:text-white"><ArrowUpRight /></Link></div><div className="mt-6 flex items-end justify-between border-t border-[#e3e6df] pt-5"><p className="flex items-center gap-2 text-sm text-[#647269]"><Users className="size-4" />Up to {room.max_guests} · {size}</p><p className="font-heading text-2xl text-[#17352d]"><span className="text-xs font-sans text-[#7b857f]">from </span>₹{Number(room.base_price).toLocaleString("en-IN")}</p></div></div></article>;
+}
