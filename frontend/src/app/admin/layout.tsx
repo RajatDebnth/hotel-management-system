@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { AdminSidebarNav } from "@/components/admin/admin-sidebar-nav";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
@@ -10,13 +10,42 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const userId = claimsData?.claims?.sub;
   if (!userId) redirect("/login?next=/admin");
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", userId).single();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role, full_name")
+    .eq("id", userId)
+    .single();
   if (profile?.role !== "admin") redirect("/account?message=Administrator+access+is+required.");
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <header className="border-b bg-background"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6"><Link href="/admin" className="font-semibold">Hotel administration</Link><nav className="flex flex-wrap gap-4"><Link href="/admin" className="text-sm underline">Dashboard</Link><Link href="/admin/inventory" className="text-sm underline">Inventory</Link><Link href="/admin/operations" className="text-sm underline">Operations</Link><Link href="/" className="text-sm underline">View hotel</Link><Link href="/account" className="text-sm underline">Customer account</Link></nav></div></header>
-      {children}
+    <div className="admin-shell min-h-screen bg-neutral-100 text-neutral-950 lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
+      <aside className="border-b border-neutral-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:border-r lg:border-b-0">
+        <div className="flex h-full flex-col px-4 py-4 lg:px-5 lg:py-6">
+          <div className="flex items-center justify-between gap-4 border-b border-neutral-200 pb-4 lg:block lg:pb-6">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">Aurelia House</p>
+              <p className="mt-1 text-lg font-semibold tracking-tight">Admin console</p>
+            </div>
+            <span className="border border-neutral-300 bg-neutral-50 px-2 py-1 text-xs font-semibold text-neutral-600">LIVE</span>
+          </div>
+
+          <div className="mt-4 overflow-x-auto lg:mt-6 lg:overflow-visible">
+            <AdminSidebarNav />
+          </div>
+
+          <div className="mt-auto hidden border-t border-neutral-200 pt-5 lg:block">
+            <p className="truncate text-sm font-semibold">{profile.full_name || "Administrator"}</p>
+            <p className="mt-1 text-xs uppercase tracking-wider text-neutral-500">Administrator access</p>
+          </div>
+        </div>
+      </aside>
+      <div className="min-w-0">
+        <header className="flex min-h-14 items-center justify-between border-b border-neutral-200 bg-white px-5 sm:px-8">
+          <p className="text-sm font-medium text-neutral-500">Hotel operations</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Light workspace</p>
+        </header>
+        {children}
+      </div>
     </div>
   );
 }

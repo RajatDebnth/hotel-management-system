@@ -8,16 +8,17 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 - `READY`: prerequisites are satisfied and Codex may implement it.
 - `IN PROGRESS`: implementation has started but is not verified.
 - `WAITING`: blocked on a specific user or external action.
+- `PAUSED`: intentionally deferred by the user; Codex must not start it until the user explicitly resumes it.
 - `DONE`: implementation and required checks passed.
 
 ## Current state
 
-- Current step: **Step 14 - Staging deployment**
-- Status: **WAITING**
-- Last completed step: **Step 13 - Full hardening and release candidate**
-- Application state: The release candidate is published to the private `Rajat22UEE/hotel-management-system` GitHub repository. Render is signed in but currently has access only to a different GitHub account; Vercel is awaiting GitHub sign-in/account creation. Live services are not created yet.
-- User action currently required: Authorize Codex to open Render's GitHub installation configuration and Vercel's GitHub sign-in/account flow. These actions grant third-party repository access and therefore require confirmation at action time. Secret values will remain in provider dashboards only.
-- Next command: **do next**
+- Current step: **Step 17 - Admin dashboard shell redesign**
+- Status: **DONE**
+- Last completed step: **Step 17 - Admin dashboard shell redesign**
+- Application state: The public Next.js staging frontend is deployed on Vercel, the FastAPI staging backend is deployed on Render, and both use the hosted Supabase project for PostgreSQL, Auth, and Storage. The admin Overview, Inventory, and Operations screens now share a responsive sidebar dashboard shell with route-aware active states and a light-only 60/30/10 white, neutral-grey, and black visual system. Payment Steps 15 and 16 remain paused.
+- User action currently required: None. Both manual QR/cash payment verification and automated payment-gateway integration are intentionally paused.
+- Next command: Explicitly resume **Step 15** or **Step 16** when ready.
 
 ## Standard execution contract
 
@@ -409,7 +410,7 @@ FRONTEND_URL=http://localhost:3000
 
 ## Step 14 - Staging deployment
 
-**Status:** WAITING
+**Status:** DONE
 
 **Objective:** Deploy and verify a staging environment.
 
@@ -435,15 +436,40 @@ FRONTEND_URL=http://localhost:3000
 
 ---
 
-## Deferred Step 15 - Online payments
+## Deferred Step 15 - Manual QR and cash payment verification
 
-**Status:** PENDING
+**Status:** PAUSED
+
+**Objective:** Add an interim, administrator-verified payment workflow without integrating a payment gateway.
+
+**Prerequisites:**
+
+- Step 14 is `DONE`.
+- User explicitly resumes this step and confirms the payment rules.
+- QR amount policy, proof deadline, accepted receipt formats, and cash collection policy are agreed.
+
+**Required scope:**
+
+- Admin-managed QR code, payee details, and payment instructions
+- Customer selection of QR or cash payment while booking
+- Private receipt/screenshot upload and auditable resubmission
+- Admin payment-review queue with approve/reject reasons
+- Atomic QR approval that marks payment paid and booking confirmed
+- Cash approval that confirms the booking as cash due, followed by cash-received recording
+- Expiration of abandoned pending holds, authorization/RLS, tests, and staging verification
+
+---
+
+## Deferred Step 16 - Online payment gateway integration
+
+**Status:** PAUSED
 
 **Objective:** Add online payments only after the non-payment MVP is stable and the user selects a provider.
 
 **Prerequisites:**
 
-- Step 14 is `DONE`.
+- Step 15 may remain paused or be completed; the gateway design must coexist with manual/cash records if Step 15 is implemented.
+- User explicitly resumes this step.
 - User selects a payment provider and owns a configured merchant/test account.
 - Payment, refund, cancellation, currency, tax, and settlement rules are agreed.
 
@@ -455,6 +481,29 @@ FRONTEND_URL=http://localhost:3000
 - Payment/refund records
 - Failure and retry handling
 - No raw card data stored by the application
+
+---
+
+## Step 17 - Admin dashboard shell redesign
+
+**Status:** DONE
+
+**Objective:** Present every existing administrator control inside one responsive, minimalist dashboard shell.
+
+**Work:**
+
+- Add a persistent desktop sidebar and compact mobile navigation rail.
+- Give the current admin route and inventory tabs visible active states.
+- Apply a light-only 60/30/10 palette using white, neutral greys, and black.
+- Replace rounded decorative admin surfaces with sharp bordered panels, controls, queues, metrics, and charts.
+- Preserve the existing admin authorization and operational behavior.
+
+**Acceptance checks:**
+
+- Overview, Inventory, and Operations use the shared shell.
+- Current and nested admin routes expose `aria-current` and a visible active treatment.
+- Admin controls contain no legacy warm accent colors or rounded-card styling.
+- Frontend lint, type checking, unit tests, and production build pass.
 
 ---
 
@@ -476,8 +525,21 @@ FRONTEND_URL=http://localhost:3000
 - 2026-09-07: Report periods use `[start_date, end_date)` and are limited to 366 nights. Occupancy and booked revenue include confirmed, checked-in, and checked-out reservations; booked revenue uses immutable nightly price snapshots and is not cash accounting.
 - 2026-09-07: Public enquiry throttling is five attempts per client per minute per FastAPI process by default; multi-worker production deployments must add a shared edge/WAF limiter. API errors are correlated with sanitized request IDs, and both applications emit explicit browser security headers.
 - 2026-09-08: Staging uses Vercel for `frontend/`, a Render Blueprint for `backend/`, and hosted Supabase. A GitHub Actions health request runs every 10 minutes for free-tier staging convenience; it is not an uptime guarantee and a paid Render instance remains the production recommendation.
+- 2026-09-08: At the user's request, recorded two separate paused payment milestones: Step 15 for manual administrator-verified QR/cash payments and Step 16 for later automated payment-gateway integration. Neither step may begin until the user explicitly resumes it.
 
 ## Completion log
+
+- 2026-09-08: Step 17 completed. Replaced the admin header navigation with a responsive sidebar dashboard shell, added route-aware active states for root and nested admin routes, added active inventory tabs, and restyled Overview, Inventory, Operations, forms, queues, metrics, status labels, charting, and actions with a light-only 60/30/10 white-neutral-black system and sharp borders. Added focused navigation tests; frontend lint, type checking, eight unit tests, and the production build passed.
+
+- 2026-09-08: Step 14 completed. With explicit confirmation, disabled Vercel Authentication to make staging public. Diagnosed the resulting platform `404` as a Vercel project imported with the `Other` framework preset, changed it to `Next.js`, and redeployed successfully; the managed production, branch, and unique deployment URLs now return `200`. Verified Render health/catalog and exact-origin CORS plus preflight, passed all six Playwright desktop/mobile staging checks, passed disposable live authentication/concurrent-booking and admin inventory/Storage smoke tests with cleanup, added the `RENDER_HEALTH_URL` GitHub Actions repository secret, and confirmed keep-warm workflow run #5 succeeded.
+
+- 2026-09-08: Configured Supabase Auth Site URL to the canonical Vercel `git-main` staging origin and added production plus localhost callback/reset allowlist entries. Staging Playwright reached Vercel's login page instead of the application in all six desktop/mobile checks. Inspection confirmed Vercel Authentication is enabled with Standard Protection (`Require Log In`), so disabling project deployment protection is the next required, permission-changing action.
+
+- 2026-09-08: With explicit confirmation, removed and recreated the broken Vercel-managed primary alias; it remained a platform-level `404`, and a newly created managed alias behaved the same. Verified that Vercel's automatic `git-main` branch alias consistently returns `200`, designated it as the canonical staging frontend, updated Vercel `NEXT_PUBLIC_SITE_URL`, redeployed Vercel, updated Render `FRONTEND_URL`, and redeployed Render. The canonical frontend, Render health, and database-backed catalog return `200`, and CORS now returns the exact canonical Vercel origin. Supabase Auth URL configuration is waiting because the Supabase browser session expired.
+
+- 2026-09-08: Signed into the Supabase owner account, confirmed project `taliyhczkllqydvpsqdt` in `ap-south-1`, selected its shared transaction pooler, replaced Render's direct IPv6 database URI with the IPv4-compatible pooler endpoint on port 6543, and triggered a redeploy. Render health and `/api/v1/catalog/rooms` now return `200`, and production-origin CORS is correct. Refreshed and resaved Vercel's valid Production domain assignment, but the managed primary alias still returns `404 NOT_FOUND`; its unique deployment URL remains healthy. Repair now requires confirmed removal and recreation of the primary alias.
+
+- 2026-09-08: Rechecked the live staging deployments. Vercel's latest build is Ready, its unique deployment URL responds successfully over HTTPS, all four `NEXT_PUBLIC_*` variables are Config values, and the production domain is marked valid, but the primary alias still returns a platform-level `404 NOT_FOUND`. Render health and OpenAPI return `200` and CORS allows the production Vercel origin, but `/api/v1/catalog/rooms` returns `500`; Render logs identify an unreachable asyncpg database connection. The configured database URI was safely inspected as the direct Supabase host on port 5432, which is not reachable from Render's network. Supabase pooler retrieval is blocked because the currently authenticated Supabase account does not have access to project `taliyhczkllqydvpsqdt`.
 
 - 2026-09-08: Step 14 deployment preparation completed but live deployment is waiting. Added `render.yaml` with the backend root/build/start commands, exact secret placeholders, production mode, and HTTP health check; added a manually runnable and 10-minute scheduled Render keep-warm workflow using the `RENDER_HEALTH_URL` repository secret; and documented Vercel monorepo configuration, Render/Supabase environment setup, Auth redirects, CORS, limitations, and staging verification. GitHub sign-in is open; the local repository has no remote, so provider imports cannot proceed until the user signs in and authorizes the repository connections.
 - 2026-09-08: Created the private `Rajat22UEE/hotel-management-system` GitHub repository, completed a secret/ignore audit, committed the release candidate, and pushed `main`. Render repository import is blocked on granting its GitHub app access to this repository; Vercel deployment is blocked on its GitHub sign-in/account and repository authorization flow.

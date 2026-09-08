@@ -17,5 +17,14 @@ export default async function OperationsPage({ searchParams }: { searchParams: P
     getAdminEnquiries(token, { page: Number(query.enquiry_page) || 1, query: query.enquiry_q, status: query.enquiry_status }),
     getAdminOptions(token),
   ]);
-  return <main className="mx-auto max-w-7xl px-5 py-10 sm:px-6 sm:py-14"><p className="eyebrow text-[#947039]">Administrator</p><h1 className="mt-2 font-heading text-5xl">Guest operations</h1><p className="mt-3 text-[#5d6d65]">Review reservations and respond to customer enquiries with an auditable workflow.</p><div className="mt-10"><OperationsManager bookings={bookings} enquiries={enquiries} admins={admins} /></div></main>;
+  return (
+    <main className="admin-page">
+      <header className="border-b border-neutral-300 pb-7">
+        <p className="admin-kicker">Operations</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Bookings and enquiries</h1>
+        <p className="mt-3 max-w-2xl text-base leading-7 text-neutral-500">Review reservations and respond to customer enquiries with an auditable workflow.</p>
+      </header>
+      <div className="mt-8"><OperationsManager bookings={bookings} enquiries={enquiries} admins={admins} /></div>
+    </main>
+  );
 }

@@ -92,6 +92,51 @@
   }
   .room-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, transparent 35%, rgb(255 255 255 / 20%), transparent 62%); }
   .field { @apply min-h-11 w-full rounded-xl border bg-white px-3 py-2 text-base focus-visible:ring-2 focus-visible:ring-[#947039]; }
+  .admin-page { @apply mx-auto w-full max-w-[1500px] px-5 py-8 sm:px-8 sm:py-10; }
+  .admin-panel { @apply border border-neutral-200 bg-white; }
+  .admin-kicker { @apply text-xs font-bold uppercase tracking-[0.16em] text-neutral-500; }
+  .admin-primary-button { @apply inline-flex min-h-11 items-center justify-center gap-2 border border-neutral-950 bg-neutral-950 px-4 text-sm font-semibold text-white transition-colors hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50; }
+  .admin-secondary-button { @apply inline-flex min-h-10 items-center justify-center gap-2 border border-neutral-300 bg-white px-3 text-sm font-semibold text-neutral-800 transition-colors hover:border-neutral-950 hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2; }
+}
+
+.admin-shell {
+  color-scheme: light;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.145 0 0);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.439 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.145 0 0);
+  --border: oklch(0.88 0 0);
+  --input: oklch(0.83 0 0);
+  --ring: oklch(0.145 0 0);
+  font-family: var(--font-sans);
+}
+
+.admin-shell .field {
+  min-height: 2.75rem;
+  border-radius: 0;
+  border-color: oklch(0.83 0 0);
+  background: white;
+  color: oklch(0.145 0 0);
+  font-size: 0.875rem;
+}
+
+.admin-shell .field:focus-visible {
+  border-color: oklch(0.145 0 0);
+  box-shadow: 0 0 0 1px oklch(0.145 0 0);
+  outline: none;
+}
+
+.admin-shell input[type="checkbox"],
+.admin-shell input[type="radio"] {
+  accent-color: oklch(0.145 0 0);
 }
 
 .dark {
