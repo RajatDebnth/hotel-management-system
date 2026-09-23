@@ -20,8 +20,8 @@ async def profile(
     row = (
         await session.execute(
             text("""
-                select id, full_name, phone, avatar_path, role::text
-                from public.profiles where id = :id
+                select id, full_name, phone, avatar_path, role
+                from profiles where id = :id
             """),
             {"id": user.id},
         )
@@ -38,9 +38,10 @@ async def update_profile(
     row = (
         await session.execute(
             text("""
-                update public.profiles set full_name = :full_name, phone = :phone
+                update profiles set full_name = :full_name, phone = :phone,
+                  updated_at = current_timestamp
                 where id = :id
-                returning id, full_name, phone, avatar_path, role::text
+                returning id, full_name, phone, avatar_path, role
             """),
             {"id": user.id, "full_name": payload.full_name, "phone": payload.phone},
         )

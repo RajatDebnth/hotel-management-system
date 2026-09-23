@@ -1,8 +1,11 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import AnyHttpUrl, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -18,8 +21,10 @@ class Settings(BaseSettings):
     supabase_url: AnyHttpUrl | None = None
     supabase_publishable_key: str | None = None
     supabase_secret_key: SecretStr | None = None
-    # Keep the SQLAlchemy driver qualifier (for example, +psycopg) intact.
-    database_url: str | None = None
+    database_path: Path = BACKEND_ROOT / "data" / "hms.db"
+    uploads_dir: Path = BACKEND_ROOT / "data" / "uploads"
+    secret_key_path: Path = BACKEND_ROOT / "data" / ".session-key"
+    session_cookie_name: str = "hms_session"
 
     @property
     def supabase_configured(self) -> bool:
@@ -28,7 +33,6 @@ class Settings(BaseSettings):
                 self.supabase_url,
                 self.supabase_publishable_key,
                 self.supabase_secret_key,
-                self.database_url,
             )
         )
 

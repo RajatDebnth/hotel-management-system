@@ -101,7 +101,7 @@ async def facilities(
 ) -> list[FacilityResponse]:
     result = await session.execute(
         text(
-            "select id, name, icon, description from public.facilities "
+            "select id, name, icon, description from facilities "
             "where is_active order by name"
         )
     )

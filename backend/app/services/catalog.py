@@ -3,10 +3,11 @@ from decimal import Decimal
 from math import ceil
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.db.money import from_paise, to_paise
 from app.schemas.catalog import (
     FacilityResponse,
     RoomCategoryListResponse,
@@ -17,22 +18,22 @@ from app.schemas.catalog import (
 CATEGORY_SELECT = """
 select c.id, c.name, c.slug, c.description, c.base_price, c.max_guests,
        c.bed_type, c.room_size_sq_m,
-       count(distinct r.id)::int as available_room_count
-from public.room_categories c
-left join public.rooms r on r.category_id = c.id and r.status = 'active'
+       count(distinct r.id) as available_room_count
+from room_categories c
+left join rooms r on r.category_id = c.id and r.status = 'active'
   and (
     not :has_dates or not exists (
-      select 1 from public.bookings b
+      select 1 from bookings b
       where b.room_id = r.id
         and b.status in ('pending', 'confirmed', 'checked_in')
-        and daterange(b.check_in, b.check_out, '[)') &&
-            daterange(cast(:check_in as date), cast(:check_out as date), '[)')
+        and not (b.check_out <= :check_in or b.check_in >= :check_out)
     )
   )
-where c.is_active and (:query = '' or c.name ilike :pattern or c.description ilike :pattern)
-  and (cast(:guests as smallint) is null or c.max_guests >= cast(:guests as smallint))
-  and (cast(:min_price as numeric) is null or c.base_price >= cast(:min_price as numeric))
-  and (cast(:max_price as numeric) is null or c.base_price <= cast(:max_price as numeric))
+where c.is_active and (:query = '' or lower(c.name) like lower(:pattern)
+  or lower(c.description) like lower(:pattern))
+  and (:guests is null or c.max_guests >= :guests)
+  and (:min_price is null or c.base_price >= :min_price)
+  and (:max_price is null or c.base_price <= :max_price)
   and (:category = '' or c.slug = :category)
 group by c.id
 having (not :has_dates or count(distinct r.id) > 0)
@@ -47,26 +48,29 @@ def _storage_url(path: str) -> str:
 async def _relations(
     session: AsyncSession,
     category_ids: list[UUID],
-) -> tuple[dict[UUID, list[FacilityResponse]], dict[UUID, list[RoomImageResponse]]]:
-    facilities: dict[UUID, list[FacilityResponse]] = {item: [] for item in category_ids}
-    images: dict[UUID, list[RoomImageResponse]] = {item: [] for item in category_ids}
+) -> tuple[dict[str, list[FacilityResponse]], dict[str, list[RoomImageResponse]]]:
+    keys = [str(item) for item in category_ids]
+    facilities: dict[str, list[FacilityResponse]] = {item: [] for item in keys}
+    images: dict[str, list[RoomImageResponse]] = {item: [] for item in keys}
     if not category_ids:
         return facilities, images
 
-    facility_rows = (await session.execute(text("""
+    facility_query = text("""
         select rcf.category_id, f.id, f.name, f.icon, f.description
-        from public.room_category_facilities rcf
-        join public.facilities f on f.id = rcf.facility_id and f.is_active
-        where rcf.category_id = any(:category_ids) order by f.name
-    """), {"category_ids": category_ids})).mappings()
+        from room_category_facilities rcf
+        join facilities f on f.id = rcf.facility_id and f.is_active
+        where rcf.category_id in :category_ids order by f.name
+    """).bindparams(bindparam("category_ids", expanding=True))
+    facility_rows = (await session.execute(facility_query, {"category_ids": keys})).mappings()
     for row in facility_rows:
         facilities[row["category_id"]].append(FacilityResponse.model_validate(row))
 
-    image_rows = (await session.execute(text("""
+    image_query = text("""
         select id, category_id, storage_path, alt_text, sort_order, is_cover
-        from public.room_images where category_id = any(:category_ids)
+        from room_images where category_id in :category_ids
         order by is_cover desc, sort_order, created_at
-    """), {"category_ids": category_ids})).mappings()
+    """).bindparams(bindparam("category_ids", expanding=True))
+    image_rows = (await session.execute(image_query, {"category_ids": keys})).mappings()
     for row in image_rows:
         images[row["category_id"]].append(RoomImageResponse(
             id=row["id"], url=_storage_url(row["storage_path"]), alt_text=row["alt_text"],
@@ -96,8 +100,8 @@ async def list_categories(
         "check_in": check_in,
         "check_out": check_out,
         "guests": guests,
-        "min_price": min_price,
-        "max_price": max_price,
+        "min_price": to_paise(min_price) if min_price is not None else None,
+        "max_price": to_paise(max_price) if max_price is not None else None,
         "category": category,
     }
     total_result = await session.execute(
@@ -109,14 +113,16 @@ async def list_categories(
         text(list_query),
         {**parameters, "limit": page_size, "offset": (page - 1) * page_size},
     )
-    rows = result.mappings().all()
+    rows = [dict(row) for row in result.mappings().all()]
+    for row in rows:
+        row["base_price"] = from_paise(row["base_price"])
     ids = [row["id"] for row in rows]
     facilities, images = await _relations(session, ids)
     items = [
         RoomCategoryResponse(
             **row,
-            facilities=facilities[row["id"]],
-            images=images[row["id"]],
+            facilities=facilities[str(row["id"])],
+            images=images[str(row["id"])],
         )
         for row in rows
     ]
@@ -150,5 +156,8 @@ async def get_category(session: AsyncSession, slug: str) -> RoomCategoryResponse
     ).mappings().one_or_none()
     if row is None:
         return None
-    facilities, images = await _relations(session, [row["id"]])
-    return RoomCategoryResponse(**row, facilities=facilities[row["id"]], images=images[row["id"]])
+    values = dict(row)
+    values["base_price"] = from_paise(values["base_price"])
+    facilities, images = await _relations(session, [UUID(str(row["id"]))])
+    key = str(row["id"])
+    return RoomCategoryResponse(**values, facilities=facilities[key], images=images[key])

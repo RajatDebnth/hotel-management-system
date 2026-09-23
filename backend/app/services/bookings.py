@@ -7,6 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.money import from_paise, to_paise
 from app.schemas.auth import AuthenticatedUser
 from app.schemas.booking import BookingCreate, BookingListResponse, BookingResponse
 from app.services.availability import validate_stay
@@ -19,11 +20,18 @@ select b.id, b.booking_reference, b.room_id, r.category_id, r.room_number,
        c.name as category_name, b.check_in, b.check_out, b.adult_count,
        b.child_count, b.guest_name, b.guest_email, b.guest_phone,
        b.price_per_night, b.night_count, b.subtotal, b.tax_amount,
-       b.total_amount, b.status::text, b.special_requests, b.created_at
-from public.bookings b
-join public.rooms r on r.id = b.room_id
-join public.room_categories c on c.id = r.category_id
+       b.total_amount, b.status, b.special_requests, b.created_at
+from bookings b
+join rooms r on r.id = b.room_id
+join room_categories c on c.id = r.category_id
 """
+
+
+def booking_values(row: object) -> dict[str, object]:
+    values = dict(row)  # type: ignore[arg-type]
+    for field in ("price_per_night", "subtotal", "tax_amount", "total_amount"):
+        values[field] = from_paise(values[field])  # type: ignore[arg-type]
+    return values
 
 
 def calculate_price(
@@ -49,18 +57,16 @@ async def create_booking(
             text("""
                 select r.id as room_id, r.room_number, c.id as category_id,
                        c.name as category_name, c.base_price, c.max_guests
-                from public.rooms r
-                join public.room_categories c on c.id = r.category_id
+                from rooms r
+                join room_categories c on c.id = r.category_id
                 where c.id = :category_id and c.is_active and r.status = 'active'
                   and not exists (
-                    select 1 from public.bookings b
+                    select 1 from bookings b
                     where b.room_id = r.id
                       and b.status in ('pending', 'confirmed', 'checked_in')
-                      and daterange(b.check_in, b.check_out, '[)') &&
-                          daterange(cast(:check_in as date), cast(:check_out as date), '[)')
+                      and not (b.check_out <= :check_in or b.check_in >= :check_out)
                   )
                 order by r.room_number
-                for update of r skip locked
                 limit 1
             """),
             {
@@ -74,7 +80,7 @@ async def create_booking(
     if room is None:
         category_capacity = (
             await session.execute(
-                text("select max_guests from public.room_categories where id = :category_id"),
+                text("select max_guests from room_categories where id = :category_id"),
                 {"category_id": payload.category_id},
             )
         ).scalar_one_or_none()
@@ -96,7 +102,8 @@ async def create_booking(
             detail=f"This room category allows at most {room['max_guests']} guests",
         )
 
-    subtotal, tax_amount, total_amount = calculate_price(room["base_price"], nights)
+    price_per_night = from_paise(room["base_price"])
+    subtotal, tax_amount, total_amount = calculate_price(price_per_night, nights)
     values = {
         "booking_reference": f"HMS-{secrets.token_hex(6).upper()}",
         "user_id": user.id,
@@ -108,18 +115,18 @@ async def create_booking(
         "guest_name": payload.guest_name,
         "guest_email": str(payload.guest_email),
         "guest_phone": payload.guest_phone,
-        "price_per_night": room["base_price"],
+        "price_per_night": to_paise(price_per_night),
         "night_count": nights,
-        "subtotal": subtotal,
-        "tax_amount": tax_amount,
-        "total_amount": total_amount,
+        "subtotal": to_paise(subtotal),
+        "tax_amount": to_paise(tax_amount),
+        "total_amount": to_paise(total_amount),
         "special_requests": payload.special_requests,
     }
     try:
         booking = (
             await session.execute(
                 text("""
-                    insert into public.bookings (
+                    insert into bookings (
                       booking_reference, user_id, room_id, check_in, check_out,
                       adult_count, child_count, guest_name, guest_email, guest_phone,
                       price_per_night, night_count, subtotal, tax_amount, total_amount,
@@ -133,14 +140,14 @@ async def create_booking(
                     returning id, booking_reference, room_id, check_in, check_out,
                               adult_count, child_count, guest_name, guest_email, guest_phone,
                               price_per_night, night_count, subtotal, tax_amount, total_amount,
-                              status::text, special_requests, created_at
+                              status, special_requests, created_at
                 """),
                 values,
             )
         ).mappings().one()
         await session.execute(
             text("""
-                insert into public.booking_status_history
+                insert into booking_status_history
                   (booking_id, from_status, to_status, changed_by, reason)
                 values (:booking_id, null, 'pending', :user_id, 'Booking created')
             """),
@@ -155,7 +162,7 @@ async def create_booking(
         ) from error
 
     return BookingResponse(
-        **booking,
+        **booking_values(booking),
         category_id=room["category_id"],
         room_number=room["room_number"],
         category_name=room["category_name"],
@@ -171,7 +178,9 @@ async def list_user_bookings(
             {"user_id": user.id},
         )
     ).mappings().all()
-    return BookingListResponse(items=[BookingResponse.model_validate(row) for row in rows])
+    return BookingListResponse(
+        items=[BookingResponse.model_validate(booking_values(row)) for row in rows]
+    )
 
 
 async def get_user_booking(
@@ -185,7 +194,7 @@ async def get_user_booking(
     ).mappings().one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail="Booking not found")
-    return BookingResponse.model_validate(row)
+    return BookingResponse.model_validate(booking_values(row))
 
 
 async def cancel_user_booking(
@@ -194,8 +203,8 @@ async def cancel_user_booking(
     current = (
         await session.execute(
             text("""
-                select id, status::text, check_in from public.bookings
-                where user_id = :user_id and booking_reference = :ref for update
+                select id, status, check_in from bookings
+                where user_id = :user_id and booking_reference = :ref
             """),
             {"user_id": user.id, "ref": reference},
         )
@@ -204,7 +213,10 @@ async def cancel_user_booking(
         raise HTTPException(status_code=404, detail="Booking not found")
     if current["status"] not in {"pending", "confirmed"}:
         raise HTTPException(status_code=409, detail="This booking can no longer be cancelled")
-    if current["check_in"] <= date.today():
+    check_in = current["check_in"]
+    if isinstance(check_in, str):
+        check_in = date.fromisoformat(check_in)
+    if check_in <= date.today():
         raise HTTPException(
             status_code=409,
             detail="Bookings cannot be cancelled on or after check-in",
@@ -212,7 +224,7 @@ async def cancel_user_booking(
 
     await session.execute(
         text("""
-            update public.bookings set status = 'cancelled', cancelled_at = now(),
+            update bookings set status = 'cancelled', cancelled_at = current_timestamp,
               cancellation_reason = :reason
             where id = :booking_id
         """),
@@ -220,10 +232,10 @@ async def cancel_user_booking(
     )
     await session.execute(
         text("""
-            insert into public.booking_status_history
+            insert into booking_status_history
               (booking_id, from_status, to_status, changed_by, reason)
             values (
-              :booking_id, cast(:from_status as booking_status),
+              :booking_id, :from_status,
               'cancelled', :user_id, :reason
             )
         """),

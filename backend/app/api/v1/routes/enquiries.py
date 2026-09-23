@@ -24,7 +24,7 @@ async def create_enquiry(
         claims = await verifier.verify(credentials.credentials)
         user_id = claims.sub
     enquiry_id = (await session.execute(text("""
-        insert into public.enquiries (user_id, name, email, phone, subject, message)
+        insert into enquiries (user_id, name, email, phone, subject, message)
         values (:user_id, :name, :email, :phone, :subject, :message) returning id
     """), {"user_id": user_id, **enquiry.model_dump(exclude={"website"})})).scalar_one()
     await session.commit()

@@ -1,15 +1,12 @@
-from app.db.session import get_async_database_url
+from pathlib import Path
+
+from app.db.session import sqlite_url
 
 
-def test_plain_postgres_url_uses_asyncpg_driver() -> None:
-    url = get_async_database_url("postgresql://postgres:password@localhost/postgres")
+def test_sqlite_url_uses_absolute_aiosqlite_database(tmp_path: Path) -> None:
+    database_path = tmp_path / "local.db"
 
-    assert url.drivername == "postgresql+asyncpg"
+    url = sqlite_url(database_path)
 
-
-def test_explicit_driver_is_preserved() -> None:
-    url = get_async_database_url(
-        "postgresql+asyncpg://postgres:password@localhost/postgres"
-    )
-
-    assert url.drivername == "postgresql+asyncpg"
+    assert url.drivername == "sqlite+aiosqlite"
+    assert Path(url.database or "") == database_path.resolve()

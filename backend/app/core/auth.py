@@ -75,7 +75,7 @@ async def require_user(
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> AuthenticatedUser:
     result = await session.execute(
-        text("select role::text from public.profiles where id = :user_id and is_active"),
+        text("select role from profiles where id = :user_id and is_active"),
         {"user_id": claims.sub},
     )
     role = result.scalar_one_or_none()

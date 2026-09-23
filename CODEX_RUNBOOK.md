@@ -13,12 +13,12 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 ## Current state
 
-- Current step: **Step 18 - Local-only migration safety net**
+- Current step: **Step 19 - SQLite data layer**
 - Status: **DONE**
-- Last completed step: **Step 18 - Local-only migration safety net**
-- Application state: The cloud release is preserved on `main` and by the annotated `supabase-cloud-v1` tag. Local-only work is isolated on `codex/local-sqlite-mode`. The pre-migration backend and frontend automated baselines pass; the backend health endpoint and frontend shell run locally. As expected, the cloud catalog still needs Supabase network access and is not yet offline-capable. Payment Steps 15 and 16 remain paused.
+- Last completed step: **Step 19 - SQLite data layer**
+- Application state: The FastAPI data layer now creates and idempotently seeds `backend/data/hms.db`, serves the public catalog without PostgreSQL or network access, stores money as integer paise, and enforces active-booking overlap protection with serialized transactions plus SQLite triggers. Supabase Auth and Storage are intentionally still present until Steps 20 and 21. The cloud release remains recoverable from `main` or `supabase-cloud-v1`; payment Steps 15 and 16 remain paused.
 - User action currently required: None. The implementation defaults in `docs/local-mode-plan.md` are approved project defaults unless the user requests a change before the relevant phase.
-- Next command: Say **"do next"** to implement **Step 19 - SQLite data layer**.
+- Next command: Say **"do next"** to implement **Step 20 - Local authentication**.
 
 ## Standard execution contract
 
@@ -532,7 +532,7 @@ FRONTEND_URL=http://localhost:3000
 
 ## Step 19 - SQLite data layer
 
-**Status:** READY
+**Status:** DONE
 
 **Objective:** Replace the PostgreSQL connection, schema assumptions, and seed path with a local async SQLite database while preserving the existing service boundaries.
 
@@ -559,9 +559,32 @@ FRONTEND_URL=http://localhost:3000
 
 ## Step 20 - Local authentication
 
-**Status:** PENDING
+**Status:** READY
 
 **Objective:** Replace Supabase Auth and roles with local users, password hashing, signed HttpOnly sessions, CSRF protection, and local admin authorization.
+
+**Prerequisites:**
+
+- Step 19 is `DONE`.
+- No user credentials or cloud access are required.
+
+**Work:**
+
+- Extend local profiles with unique email and versioned PBKDF2 password hashes.
+- Add local register, login, logout, current-user, admin-check, and change-password endpoints.
+- Generate and persist an ignored local signing key; issue short-lived HttpOnly, SameSite=Lax session cookies.
+- Preserve `require_user` and `require_admin` authorization boundaries and protect unsafe cookie-authenticated requests against cross-site submission.
+- Idempotently seed `admin@example.com` with a generated first-run password that is shown once locally and never committed or logged again.
+- Add administrator user/role management without permitting self-promotion.
+
+**Acceptance checks:**
+
+- Register/login/logout/change-password and session restoration work without Supabase.
+- Invalid, expired, and cross-site requests are rejected safely.
+- Customers cannot access admin APIs or promote themselves.
+- The seeded administrator can sign in using the first-run credential.
+- Passwords and signing secrets are never stored or emitted in plaintext after first-run setup.
+- Backend lint and all relevant tests pass.
 
 ---
 
@@ -624,9 +647,11 @@ FRONTEND_URL=http://localhost:3000
 - 2026-09-07: Public enquiry throttling is five attempts per client per minute per FastAPI process by default; multi-worker production deployments must add a shared edge/WAF limiter. API errors are correlated with sanitized request IDs, and both applications emit explicit browser security headers.
 - 2026-09-08: Staging uses Vercel for `frontend/`, a Render Blueprint for `backend/`, and hosted Supabase. A GitHub Actions health request runs every 10 minutes for free-tier staging convenience; it is not an uptime guarantee and a paid Render instance remains the production recommendation.
 - 2026-09-08: At the user's request, recorded two separate paused payment milestones: Step 15 for manual administrator-verified QR/cash payments and Step 16 for later automated payment-gateway integration. Neither step may begin until the user explicitly resumes it.
-- 2026-09-23: Began the local-only migration on `codex/local-sqlite-mode` while preserving cloud commit `b617082` on `main` and the annotated `supabase-cloud-v1` tag. Selected a versioned SQLite initializer, idempotent first-run seed, standard-library PBKDF2 password hashing, generated first-run admin password, authenticated password changes, retained local `/docs`, no committed database, no default LAN mode, and a deliberate port of the existing async raw-SQL data layer rather than an ORM rewrite.
+- 2026-09-23: Began the local-only migration on `codex/local-sqlite-mode` while preserving cloud commit `b617082` on `main` and the annotated `supabase-cloud-v1` tag. Selected a versioned SQLite initializer, idempotent first-run seed, standard-library PBKDF2 password hashing, generated first-run `admin@example.com` password, authenticated password changes, retained local `/docs`, no committed database, no default LAN mode, and a deliberate port of the existing async raw-SQL data layer rather than an ORM rewrite.
 
 ## Completion log
+
+- 2026-09-23: Step 19 completed. Replaced the PostgreSQL/asyncpg/psycopg runtime with async SQLite, first-run schema versioning, idempotent catalog seeds, WAL/foreign-key/busy-timeout pragmas, serialized `IMMEDIATE` transactions, and database triggers for active-booking overlap rejection. Ported catalog, booking, profiles, enquiries, inventory, operations, dashboard, occupancy, and revenue SQL; stored all money as integer paise with exact `Decimal` boundaries; simplified the Windows server launcher; and ignored local runtime data. Backend Ruff and all 50 tests passed, including real SQLite service, reseed, FK, money, concurrent booking, overlap, and back-to-back coverage. A no-environment startup returned `200` with three catalog categories, live health/catalog smoke checks returned `200`, and frontend lint, types, eight tests, and production build passed.
 
 - 2026-09-23: Step 18 completed. Reviewed and activated `docs/local-mode-plan.md`, created the isolated `codex/local-sqlite-mode` branch and annotated `supabase-cloud-v1` rollback tag, preserved all cloud assets, and resolved implementation defaults for the remaining phases. Backend Ruff and all 45 tests passed; frontend lint, type checking, all eight tests, and production build passed. Runtime smoke checks returned `200` for backend health and the frontend shell. The current catalog's expected offline failure was recorded: it still requires external Supabase DNS until Step 19 replaces the data layer.
 

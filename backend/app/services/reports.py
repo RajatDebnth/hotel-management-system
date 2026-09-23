@@ -1,10 +1,11 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
 from fastapi import HTTPException
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.money import from_paise
 from app.schemas.booking import BookingResponse
 from app.schemas.reports import (
     DashboardSummary,
@@ -13,7 +14,7 @@ from app.schemas.reports import (
     RevenueDay,
     RevenueReport,
 )
-from app.services.bookings import BOOKING_SELECT
+from app.services.bookings import BOOKING_SELECT, booking_values
 
 REPORT_STATUSES = "('confirmed', 'checked_in', 'checked_out')"
 
@@ -40,23 +41,23 @@ async def dashboard_summary(session: AsyncSession, report_date: date) -> Dashboa
         await session.execute(
             text(f"""
                 select
-                  (select count(*) from public.rooms where status = 'active')::int
+                  (select count(*) from rooms where status = 'active')
                     as total_active_rooms,
-                  (select count(distinct b.room_id) from public.bookings b
-                    join public.rooms r on r.id = b.room_id and r.status = 'active'
+                  (select count(distinct b.room_id) from bookings b
+                    join rooms r on r.id = b.room_id and r.status = 'active'
                     where b.status in {REPORT_STATUSES}
-                      and b.check_in <= :today and b.check_out > :today)::int
+                      and b.check_in <= :today and b.check_out > :today)
                     as occupied_rooms,
-                  (select count(*) from public.bookings
-                    where status in ('confirmed', 'checked_in') and check_in = :today)::int
+                  (select count(*) from bookings
+                    where status in ('confirmed', 'checked_in') and check_in = :today)
                     as arrivals,
-                  (select count(*) from public.bookings
-                    where status in ('checked_in', 'checked_out') and check_out = :today)::int
+                  (select count(*) from bookings
+                    where status in ('checked_in', 'checked_out') and check_out = :today)
                     as departures,
-                  (select count(*) from public.bookings where status = 'pending')::int
+                  (select count(*) from bookings where status = 'pending')
                     as pending_bookings,
-                  (select count(*) from public.enquiries
-                    where status in ('new', 'in_progress'))::int as open_enquiries
+                  (select count(*) from enquiries
+                    where status in ('new', 'in_progress')) as open_enquiries
             """),
             {"today": report_date},
         )
@@ -68,45 +69,39 @@ async def dashboard_summary(session: AsyncSession, report_date: date) -> Dashboa
         **totals,
         report_date=report_date,
         occupancy_percentage=percentage(totals["occupied_rooms"], totals["total_active_rooms"]),
-        recent_bookings=[BookingResponse.model_validate(row) for row in recent],
+        recent_bookings=[BookingResponse.model_validate(booking_values(row)) for row in recent],
     )
 
 
 async def occupancy_report(
     session: AsyncSession, start_date: date, end_date: date
 ) -> OccupancyReport:
-    validate_report_range(start_date, end_date)
-    rows = (
-        await session.execute(
-            text(f"""
-                with days as (
-                  select day::date from generate_series(
-                    cast(:start_date as date), cast(:end_date as date) - 1, interval '1 day'
-                  ) day
-                ), room_total as (
-                  select count(*)::int as count from public.rooms where status = 'active'
-                )
-                select d.day as date, rt.count as available_rooms,
-                  count(distinct b.room_id)::int as occupied_rooms
-                from days d cross join room_total rt
-                left join public.bookings b on b.status in {REPORT_STATUSES}
-                  and b.check_in <= d.day and b.check_out > d.day
-                  and exists (
-                    select 1 from public.rooms r
-                    where r.id = b.room_id and r.status = 'active'
-                  )
-                group by d.day, rt.count order by d.day
-            """),
-            {"start_date": start_date, "end_date": end_date},
+    day_count = validate_report_range(start_date, end_date)
+    available_rooms = (
+        await session.execute(text("select count(*) from rooms where status = 'active'"))
+    ).scalar_one()
+    days: list[OccupancyDay] = []
+    for offset in range(day_count):
+        report_day = start_date + timedelta(days=offset)
+        occupied_rooms = (
+            await session.execute(
+                text(f"""
+                    select count(distinct b.room_id) from bookings b
+                    join rooms r on r.id = b.room_id and r.status = 'active'
+                    where b.status in {REPORT_STATUSES}
+                      and b.check_in <= :day and b.check_out > :day
+                """),
+                {"day": report_day},
+            )
+        ).scalar_one()
+        days.append(
+            OccupancyDay(
+                date=report_day,
+                available_rooms=available_rooms,
+                occupied_rooms=occupied_rooms,
+                occupancy_percentage=percentage(occupied_rooms, available_rooms),
+            )
         )
-    ).mappings().all()
-    days = [
-        OccupancyDay(
-            **row,
-            occupancy_percentage=percentage(row["occupied_rooms"], row["available_rooms"]),
-        )
-        for row in rows
-    ]
     available = sum(item.available_rooms for item in days)
     occupied = sum(item.occupied_rooms for item in days)
     return OccupancyReport(
@@ -122,25 +117,21 @@ async def occupancy_report(
 async def revenue_report(
     session: AsyncSession, start_date: date, end_date: date
 ) -> RevenueReport:
-    validate_report_range(start_date, end_date)
-    rows = (
-        await session.execute(
-            text(f"""
-                with days as (
-                  select day::date from generate_series(
-                    cast(:start_date as date), cast(:end_date as date) - 1, interval '1 day'
-                  ) day
-                )
-                select d.day as date,
-                  coalesce(sum(b.price_per_night), 0)::numeric(12,2) as booked_revenue
-                from days d left join public.bookings b on b.status in {REPORT_STATUSES}
-                  and b.check_in <= d.day and b.check_out > d.day
-                group by d.day order by d.day
-            """),
-            {"start_date": start_date, "end_date": end_date},
-        )
-    ).mappings().all()
-    days = [RevenueDay.model_validate(row) for row in rows]
+    day_count = validate_report_range(start_date, end_date)
+    days: list[RevenueDay] = []
+    for offset in range(day_count):
+        report_day = start_date + timedelta(days=offset)
+        revenue = (
+            await session.execute(
+                text(f"""
+                    select coalesce(sum(price_per_night), 0) from bookings
+                    where status in {REPORT_STATUSES}
+                      and check_in <= :day and check_out > :day
+                """),
+                {"day": report_day},
+            )
+        ).scalar_one()
+        days.append(RevenueDay(date=report_day, booked_revenue=from_paise(revenue)))
     return RevenueReport(
         start_date=start_date,
         end_date=end_date,

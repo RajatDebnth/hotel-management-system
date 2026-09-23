@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.db.money import from_paise, to_paise
 from app.schemas.admin_inventory import (
     CategoryAdmin,
     CategoryWrite,
@@ -45,22 +46,25 @@ def _image(row: dict[str, object]) -> ImageAdmin:
 async def inventory(session: AsyncSession) -> InventoryResponse:
     categories = (await session.execute(text("""
         select id, name, slug, description, base_price, max_guests, bed_type,
-               room_size_sq_m, is_active from public.room_categories order by name
+               room_size_sq_m, is_active from room_categories order by name
     """))).mappings().all()
     rooms = (await session.execute(text("""
         select r.id, r.room_number, r.category_id, r.floor, r.description,
-               r.status::text, c.name as category_name from public.rooms r
-        join public.room_categories c on c.id = r.category_id order by r.room_number
+               r.status, c.name as category_name from rooms r
+        join room_categories c on c.id = r.category_id order by r.room_number
     """))).mappings().all()
     facilities = (await session.execute(text("""
-        select id, name, icon, description, is_active from public.facilities order by name
+        select id, name, icon, description, is_active from facilities order by name
     """))).mappings().all()
     images = (await session.execute(text("""
         select id, room_id, category_id, storage_path, alt_text, sort_order, is_cover
-        from public.room_images order by category_id, room_id, sort_order, created_at
+        from room_images order by category_id, room_id, sort_order, created_at
     """))).mappings().all()
     return InventoryResponse(
-        categories=[CategoryAdmin.model_validate(row) for row in categories],
+        categories=[
+            CategoryAdmin.model_validate({**row, "base_price": from_paise(row["base_price"])})
+            for row in categories
+        ],
         rooms=[RoomAdmin.model_validate(row) for row in rooms],
         facilities=[FacilityAdmin.model_validate(row) for row in facilities],
         images=[_image(dict(row)) for row in images],
@@ -77,17 +81,21 @@ async def write_record(
     if table not in allowed:
         raise ValueError("Unsupported inventory table")
     values = model.model_dump()
+    if table == "room_categories":
+        values["base_price"] = to_paise(values["base_price"])
+        if values["room_size_sq_m"] is not None:
+            values["room_size_sq_m"] = float(values["room_size_sq_m"])
     columns = list(values)
     try:
         if record_id is None:
             query = text(
-                f"insert into public.{table} ({', '.join(columns)}) "
+                f"insert into {table} ({', '.join(columns)}) "
                 f"values ({', '.join(f':{column}' for column in columns)}) returning id"
             )
         else:
             values["id"] = record_id
             query = text(
-                f"update public.{table} set "
+                f"update {table} set "
                 f"{', '.join(f'{column} = :{column}' for column in columns)} "
                 "where id = :id returning id"
             )
@@ -95,7 +103,7 @@ async def write_record(
         if result is None:
             raise HTTPException(status_code=404, detail="Inventory record not found")
         await session.commit()
-        return result
+        return UUID(str(result))
     except IntegrityError as error:
         await session.rollback()
         raise HTTPException(
@@ -110,7 +118,7 @@ async def delete_record(session: AsyncSession, table: str, record_id: UUID) -> N
     try:
         deleted = (
             await session.execute(
-                text(f"delete from public.{table} where id = :id returning id"), {"id": record_id}
+                text(f"delete from {table} where id = :id returning id"), {"id": record_id}
             )
         ).scalar_one_or_none()
         if deleted is None:
@@ -152,13 +160,13 @@ async def upload_image(
         if is_cover:
             field = "category_id" if category_id else "room_id"
             await session.execute(
-                text(f"update public.room_images set is_cover = false where {field} = :parent"),
+                text(f"update room_images set is_cover = false where {field} = :parent"),
                 {"parent": parent},
             )
         row = (
             await session.execute(
                 text("""
-                    insert into public.room_images
+                    insert into room_images
                       (room_id, category_id, storage_path, alt_text, sort_order, is_cover)
                     values (:room_id, :category_id, :path, :alt_text, :sort_order, :is_cover)
                     returning id, room_id, category_id, storage_path, alt_text, sort_order, is_cover
@@ -184,7 +192,7 @@ async def upload_image(
 async def update_image(session: AsyncSession, image_id: UUID, payload: ImageUpdate) -> ImageAdmin:
     parent = (
         await session.execute(
-            text("select room_id, category_id from public.room_images where id = :id for update"),
+            text("select room_id, category_id from room_images where id = :id"),
             {"id": image_id},
         )
     ).mappings().one_or_none()
@@ -194,13 +202,13 @@ async def update_image(session: AsyncSession, image_id: UUID, payload: ImageUpda
         field = "category_id" if parent["category_id"] else "room_id"
         value = parent["category_id"] or parent["room_id"]
         await session.execute(
-            text(f"update public.room_images set is_cover = false where {field} = :parent"),
+            text(f"update room_images set is_cover = false where {field} = :parent"),
             {"parent": value},
         )
     row = (
         await session.execute(
             text("""
-                update public.room_images set alt_text = :alt_text,
+                update room_images set alt_text = :alt_text,
                   sort_order = :sort_order, is_cover = :is_cover
                 where id = :id
                 returning id, room_id, category_id, storage_path, alt_text, sort_order, is_cover
@@ -215,7 +223,7 @@ async def update_image(session: AsyncSession, image_id: UUID, payload: ImageUpda
 async def delete_image(session: AsyncSession, image_id: UUID) -> None:
     row = (
         await session.execute(
-            text("delete from public.room_images where id = :id returning storage_path"),
+            text("delete from room_images where id = :id returning storage_path"),
             {"id": image_id},
         )
     ).scalar_one_or_none()

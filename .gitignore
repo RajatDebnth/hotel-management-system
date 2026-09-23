@@ -23,6 +23,7 @@ __pycache__/
 .coverage
 htmlcov/
 *.egg-info/
+backend/data/
 
 # Supabase local state
 supabase/.branches/

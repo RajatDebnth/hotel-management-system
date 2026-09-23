@@ -15,7 +15,7 @@ from app.schemas.admin_operations import (
 )
 from app.schemas.auth import AuthenticatedUser
 from app.schemas.booking import BookingResponse
-from app.services.bookings import BOOKING_SELECT
+from app.services.bookings import BOOKING_SELECT, booking_values
 
 BOOKING_TRANSITIONS = {
     "pending": {"confirmed", "rejected", "cancelled"},
@@ -42,18 +42,20 @@ async def list_admin_bookings(
 ) -> AdminBookingList:
     pattern = f"%{query.strip()}%"
     where = """
-      where (:query = '' or b.booking_reference ilike :pattern
-        or b.guest_name ilike :pattern or b.guest_email ilike :pattern
-        or r.room_number ilike :pattern or c.name ilike :pattern)
-        and (cast(:status as booking_status) is null or b.status = cast(:status as booking_status))
+      where (:query = '' or lower(b.booking_reference) like lower(:pattern)
+        or lower(b.guest_name) like lower(:pattern)
+        or lower(b.guest_email) like lower(:pattern)
+        or lower(r.room_number) like lower(:pattern)
+        or lower(c.name) like lower(:pattern))
+        and (:status is null or b.status = :status)
     """
     values = {"query": query.strip(), "pattern": pattern, "status": status_filter}
     total = (
         await session.execute(
             text(f"""
-                select count(*) from public.bookings b
-                join public.rooms r on r.id = b.room_id
-                join public.room_categories c on c.id = r.category_id
+                select count(*) from bookings b
+                join rooms r on r.id = b.room_id
+                join room_categories c on c.id = r.category_id
                 {where}
             """),
             values,
@@ -69,7 +71,7 @@ async def list_admin_bookings(
         )
     ).mappings().all()
     return AdminBookingList(
-        items=[BookingResponse.model_validate(row) for row in rows],
+        items=[BookingResponse.model_validate(booking_values(row)) for row in rows],
         page=page,
         page_size=page_size,
         total=total,
@@ -85,7 +87,7 @@ async def transition_booking(
 ) -> BookingResponse:
     current = (
         await session.execute(
-            text("select status::text from public.bookings where id = :id for update"),
+            text("select status from bookings where id = :id"),
             {"id": booking_id},
         )
     ).scalar_one_or_none()
@@ -97,15 +99,15 @@ async def transition_booking(
             detail=f"Booking cannot move from {current} to {payload.status}",
         )
     await session.execute(
-        text("update public.bookings set status = cast(:status as booking_status) where id = :id"),
+        text("update bookings set status = :status, updated_at = current_timestamp where id = :id"),
         {"id": booking_id, "status": payload.status},
     )
     await session.execute(
         text("""
-            insert into public.booking_status_history
+            insert into booking_status_history
               (booking_id, from_status, to_status, changed_by, reason)
             values (
-              :id, cast(:from_status as booking_status), cast(:to_status as booking_status),
+              :id, :from_status, :to_status,
               :actor, :reason
             )
         """),
@@ -121,7 +123,7 @@ async def transition_booking(
     row = (
         await session.execute(text(f"{BOOKING_SELECT} where b.id = :id"), {"id": booking_id})
     ).mappings().one()
-    return BookingResponse.model_validate(row)
+    return BookingResponse.model_validate(booking_values(row))
 
 
 async def list_admin_enquiries(
@@ -132,21 +134,23 @@ async def list_admin_enquiries(
     status_filter: str | None,
 ) -> AdminEnquiryList:
     where = """
-      where (:query = '' or e.name ilike :pattern or e.email ilike :pattern
-        or e.subject ilike :pattern or e.message ilike :pattern)
-        and (cast(:status as enquiry_status) is null or e.status = cast(:status as enquiry_status))
+      where (:query = '' or lower(e.name) like lower(:pattern)
+        or lower(e.email) like lower(:pattern)
+        or lower(e.subject) like lower(:pattern)
+        or lower(e.message) like lower(:pattern))
+        and (:status is null or e.status = :status)
     """
     values = {"query": query.strip(), "pattern": f"%{query.strip()}%", "status": status_filter}
     total = (
-        await session.execute(text(f"select count(*) from public.enquiries e {where}"), values)
+        await session.execute(text(f"select count(*) from enquiries e {where}"), values)
     ).scalar_one()
     rows = (
         await session.execute(
             text(f"""
                 select e.id, e.user_id, e.name, e.email, e.phone, e.subject,
-                  e.message, e.status::text, e.assigned_to, p.full_name as assigned_name,
+                  e.message, e.status, e.assigned_to, p.full_name as assigned_name,
                   e.admin_notes, e.created_at, e.updated_at
-                from public.enquiries e left join public.profiles p on p.id = e.assigned_to
+                from enquiries e left join profiles p on p.id = e.assigned_to
                 {where} order by e.created_at desc limit :limit offset :offset
             """),
             {**values, "limit": page_size, "offset": (page - 1) * page_size},
@@ -166,7 +170,7 @@ async def update_enquiry(
 ) -> EnquiryAdmin:
     current = (
         await session.execute(
-            text("select status::text from public.enquiries where id = :id for update"),
+            text("select status from enquiries where id = :id"),
             {"id": enquiry_id},
         )
     ).scalar_one_or_none()
@@ -181,7 +185,7 @@ async def update_enquiry(
         is_admin = (
             await session.execute(
                 text("""
-                    select exists(select 1 from public.profiles
+                    select exists(select 1 from profiles
                     where id = :id and role = 'admin' and is_active)
                 """),
                 {"id": payload.assigned_to},
@@ -191,8 +195,8 @@ async def update_enquiry(
             raise HTTPException(status_code=422, detail="Assignee must be an active administrator")
     await session.execute(
         text("""
-            update public.enquiries set status = cast(:status as enquiry_status),
-              assigned_to = :assigned_to, admin_notes = :admin_notes where id = :id
+            update enquiries set status = :status, assigned_to = :assigned_to,
+              admin_notes = :admin_notes, updated_at = current_timestamp where id = :id
         """),
         {"id": enquiry_id, **payload.model_dump()},
     )
@@ -201,9 +205,9 @@ async def update_enquiry(
         await session.execute(
             text("""
                 select e.id, e.user_id, e.name, e.email, e.phone, e.subject,
-                  e.message, e.status::text, e.assigned_to, p.full_name as assigned_name,
-                  e.admin_notes, e.created_at, e.updated_at from public.enquiries e
-                left join public.profiles p on p.id=e.assigned_to where e.id=:id
+                  e.message, e.status, e.assigned_to, p.full_name as assigned_name,
+                  e.admin_notes, e.created_at, e.updated_at from enquiries e
+                left join profiles p on p.id=e.assigned_to where e.id=:id
             """),
             {"id": enquiry_id},
         )
@@ -214,7 +218,7 @@ async def update_enquiry(
 async def list_admin_options(session: AsyncSession) -> list[AdminOption]:
     rows = (
         await session.execute(text("""
-            select id, full_name from public.profiles
+            select id, full_name from profiles
             where role = 'admin' and is_active order by full_name
         """))
     ).mappings().all()

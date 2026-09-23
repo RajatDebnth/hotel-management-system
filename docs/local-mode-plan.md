@@ -1,6 +1,6 @@
 # Local-only mode plan (SQLite + FastAPI)
 
-**Status:** Phase 0 complete on `codex/local-sqlite-mode`; Phase 1 is ready.
+**Status:** Phases 0-1 complete on `codex/local-sqlite-mode`; Phase 2 is ready.
 
 **Date:** 2026-09-23
 
@@ -196,6 +196,8 @@ This is an open decision. See section 19.
 
 ## 8. Phase 1 - Database: PostgreSQL to SQLite
 
+**Status:** complete on 2026-09-23.
+
 ### 8.1 Connection and configuration
 
 - `backend/app/db/session.py`: replace the PostgreSQL URL with
@@ -322,13 +324,13 @@ Guidance:
 
 PostgreSQL currently guarantees no double booking with an exclusion constraint.
 
-SQLite replaces this with a transaction that checks availability and inserts inside
+SQLite replaces this with both an `IMMEDIATE` transaction that serializes room
 
-a single `IMMEDIATE` transaction. For one local machine this is equivalent in
+assignment and insert/update triggers that reject overlapping active bookings at
 
-practice, but it is an application-level guarantee, not a database constraint, and
+the database level. Concurrent, overlapping, and back-to-back cases are covered by
 
-must be documented as such and covered by a test.
+integration tests.
 
 ## 9. Phase 2 - Local authentication
 
@@ -812,7 +814,7 @@ small, offline-capable, and compatible with the existing service layer.
 
    dependency and works offline on Windows.
 
-3. Seed administrator: create `admin@local.test` during the idempotent seed. The
+3. Seed administrator: create `admin@example.com` during the idempotent seed. The
 
    initial password will be generated on first run, printed once to the local terminal,
 
