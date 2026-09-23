@@ -1,6 +1,6 @@
 # Local-only mode plan (SQLite + FastAPI)
 
-**Status:** Phases 0-2 complete on `codex/local-sqlite-mode`; Phase 3 is ready.
+**Status:** Phases 0-3 complete on `codex/local-sqlite-mode`; Phase 4 is ready.
 
 **Date:** 2026-09-23
 
@@ -416,7 +416,7 @@ Email verification and emailed password reset cannot work without a mail service
 
 ## 10. Phase 3 - Images
 
-**Status:** ready.
+**Status:** complete on 2026-09-23.
 
 - `POST /api/v1/admin/inventory/images` keeps its current validation (JPEG, PNG, and
 
@@ -449,6 +449,8 @@ Email verification and emailed password reset cannot work without a mail service
   populated on first run.
 
 ## 11. Phase 4 - Frontend changes
+
+**Status:** ready.
 
 Rendering stays as it is. Only the data-access and identity plumbing changes.
 

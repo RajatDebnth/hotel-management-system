@@ -1,13 +1,14 @@
 import secrets
+from urllib.parse import quote
 from uuid import UUID
 
-import httpx
 from fastapi import HTTPException, UploadFile
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.core.storage import resolve_upload_path, write_upload
 from app.db.money import from_paise, to_paise
 from app.schemas.admin_inventory import (
     CategoryAdmin,
@@ -35,8 +36,8 @@ def valid_image_signature(content: bytes, content_type: str) -> bool:
 
 
 def _image_url(path: str) -> str:
-    base_url = str(get_settings().supabase_url).rstrip("/")
-    return f"{base_url}/storage/v1/object/public/room-images/{path}"
+    base_url = str(get_settings().api_url).rstrip("/")
+    return f"{base_url}/media/{quote(path, safe='/')}"
 
 
 def _image(row: dict[str, object]) -> ImageAdmin:
@@ -155,7 +156,10 @@ async def upload_image(
         raise HTTPException(status_code=422, detail="File content does not match its image type")
     parent = category_id or room_id
     path = f"inventory/{parent}/{secrets.token_hex(16)}{extension}"
-    await _storage_upload(path, content, file.content_type or "application/octet-stream")
+    try:
+        stored_file = write_upload(get_settings().uploads_dir, path, content)
+    except OSError as error:
+        raise HTTPException(status_code=500, detail="Unable to store image") from error
     try:
         if is_cover:
             field = "category_id" if category_id else "room_id"
@@ -185,7 +189,7 @@ async def upload_image(
         return _image(dict(row))
     except Exception:
         await session.rollback()
-        await _storage_delete(path)
+        stored_file.unlink(missing_ok=True)
         raise
 
 
@@ -221,44 +225,27 @@ async def update_image(session: AsyncSession, image_id: UUID, payload: ImageUpda
 
 
 async def delete_image(session: AsyncSession, image_id: UUID) -> None:
-    row = (
+    storage_path = (
         await session.execute(
-            text("delete from room_images where id = :id returning storage_path"),
+            text("select storage_path from room_images where id = :id"),
             {"id": image_id},
         )
     ).scalar_one_or_none()
-    if row is None:
+    if storage_path is None:
         raise HTTPException(status_code=404, detail="Image not found")
-    await _storage_delete(str(row))
-    await session.commit()
-
-
-def _storage_headers() -> dict[str, str]:
-    settings = get_settings()
-    if settings.supabase_secret_key is None:
-        raise RuntimeError("SUPABASE_SECRET_KEY is required for image management")
-    key = settings.supabase_secret_key.get_secret_value()
-    return {"apikey": key, "Authorization": f"Bearer {key}"}
-
-
-async def _storage_upload(path: str, content: bytes, content_type: str) -> None:
-    url = f"{str(get_settings().supabase_url).rstrip('/')}/storage/v1/object/room-images/{path}"
-    async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.post(
-            url,
-            headers={**_storage_headers(), "Content-Type": content_type, "x-upsert": "false"},
-            content=content,
-        )
-    if response.status_code >= 400:
-        raise HTTPException(status_code=502, detail="Image storage upload failed")
-
-
-async def _storage_delete(path: str) -> None:
-    url = f"{str(get_settings().supabase_url).rstrip('/')}/storage/v1/object/room-images"
-    async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.request(
-            "DELETE", url, headers={**_storage_headers(), "Content-Type": "application/json"},
-            json={"prefixes": [path]},
-        )
-    if response.status_code >= 400:
-        raise HTTPException(status_code=502, detail="Image storage deletion failed")
+    target = resolve_upload_path(get_settings().uploads_dir, str(storage_path))
+    quarantine = target.with_name(f"{target.name}.{secrets.token_hex(8)}.deleting")
+    moved = False
+    if target.is_file():
+        target.replace(quarantine)
+        moved = True
+    try:
+        await session.execute(text("delete from room_images where id = :id"), {"id": image_id})
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        if moved and quarantine.exists() and not target.exists():
+            quarantine.replace(target)
+        raise
+    if moved:
+        quarantine.unlink(missing_ok=True)

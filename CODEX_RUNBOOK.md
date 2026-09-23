@@ -13,12 +13,12 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 ## Current state
 
-- Current step: **Step 20 - Local authentication**
+- Current step: **Step 21 - Local image storage**
 - Status: **DONE**
-- Last completed step: **Step 20 - Local authentication**
-- Application state: FastAPI now owns local registration, login, logout, password changes, signed HttpOnly sessions, current-user/admin authorization, CSRF origin checks, and administrator user-role management. Schema version 2 upgrades existing SQLite databases and creates `admin@example.com` with a one-time generated password shown only on the first backend start. Supabase Auth/JWKS/bearer verification is removed; Supabase remains only for room-image Storage until Step 21. The frontend still uses its old Supabase session client until Step 22. The cloud release remains recoverable; payment Steps 15 and 16 remain paused.
+- Last completed step: **Step 21 - Local image storage**
+- Application state: FastAPI now owns the complete local backend: SQLite data, local cookie authentication, and filesystem image storage. Validated uploads are stored under ignored `backend/data/uploads`, served from `/media`, and coordinated with metadata using compensating cleanup and quarantine-based deletion. Three tracked generated room photographs are copied and seeded idempotently for the public catalog. No backend runtime Supabase configuration or network call remains. The frontend still uses its old Supabase session client until Step 22. The cloud release remains recoverable; payment Steps 15 and 16 remain paused.
 - User action currently required: None. The implementation defaults in `docs/local-mode-plan.md` are approved project defaults unless the user requests a change before the relevant phase.
-- Next command: Say **"do next"** to implement **Step 21 - Local image storage**.
+- Next command: Say **"do next"** to implement **Step 22 - Frontend local-session migration**.
 
 ## Standard execution contract
 
@@ -590,7 +590,7 @@ FRONTEND_URL=http://localhost:3000
 
 ## Step 21 - Local image storage
 
-**Status:** READY
+**Status:** DONE
 
 **Objective:** Replace Supabase Storage with validated local uploads served safely by FastAPI.
 
@@ -620,9 +620,30 @@ FRONTEND_URL=http://localhost:3000
 
 ## Step 22 - Frontend local-session migration
 
-**Status:** PENDING
+**Status:** READY
 
 **Objective:** Replace Supabase frontend clients and bearer tokens with same-origin cookie credentials and local authentication flows.
+
+**Prerequisites:**
+
+- Step 21 is `DONE`.
+- No user credentials or cloud access are required.
+
+**Work:**
+
+- Remove Supabase browser/server/proxy clients, dependencies, and public environment variables.
+- Migrate registration, login, logout, session restoration, guards, booking, account, and administrator API calls to cookie credentials.
+- Replace email callback/reset flows with the local authenticated change-password experience.
+- Add administrator user/role controls to the existing dashboard shell.
+- Regenerate API types and update unit and end-to-end coverage.
+
+**Acceptance checks:**
+
+- Customer register/login/logout, protected navigation, profile, bookings, and cancellation work locally.
+- Administrator login, guards, inventory, operations, reports, and user-role management work locally.
+- No frontend Supabase dependency, environment variable, bearer token, or callback route remains.
+- CSRF-protected mutations include credentials and work only from the configured local origin.
+- Frontend lint, type checking, tests, and production build pass.
 
 ---
 
@@ -672,6 +693,8 @@ FRONTEND_URL=http://localhost:3000
 - 2026-09-23: Began the local-only migration on `codex/local-sqlite-mode` while preserving cloud commit `b617082` on `main` and the annotated `supabase-cloud-v1` tag. Selected a versioned SQLite initializer, idempotent first-run seed, standard-library PBKDF2 password hashing, generated first-run `admin@example.com` password, authenticated password changes, retained local `/docs`, no committed database, no default LAN mode, and a deliberate port of the existing async raw-SQL data layer rather than an ORM rewrite.
 
 ## Completion log
+
+- 2026-09-23: Step 21 completed. Replaced Supabase Storage HTTP calls and credentials with confined local paths, exclusive file creation, compensating upload cleanup, quarantine-based deletion rollback, startup orphan cleanup, and a FastAPI `/media` mount. Catalog and admin responses now return URL-encoded local media URLs. Added three tracked, generated 1536×1024 room photographs for Deluxe King, Family Suite, and Garden Twin; first-run setup copies them into ignored runtime storage and idempotently seeds their metadata. Added localhost media allowances to Next.js image configuration and CSP. Backend Ruff and all 58 tests passed, covering demo copying, path traversal, signatures, size/type validation, upload/read/update/delete, database-failure cleanup, delete restoration, metadata seeding, and public URLs. A direct media request returned `200 image/png`; frontend verification remained green.
 
 - 2026-09-23: Step 20 completed. Added schema-v2 email/password migration, case-insensitive unique local accounts, 600,000-iteration salted PBKDF2-HMAC-SHA256 password hashes, generated first-run `admin@example.com` credentials, a persisted ignored signing key, eight-hour HS256 HttpOnly SameSite=Lax sessions, local register/login/logout/current-user/admin-check/password-change endpoints, origin-based CSRF protection for cookie-authenticated writes, optional local identity on enquiries, and admin-only user listing/role changes with self-change and last-admin safeguards. Removed backend Supabase JWKS and bearer-token verification while retaining only temporary Storage configuration. Backend Ruff and all 54 tests passed, including v1-to-v2 migration, hashing, signing-key stability, cookie flags, session restoration, duplicate/generic login handling, password rotation, logout, missing/invalid/expired sessions, CSRF rejection, customer/admin isolation, self-role denial, and administrator promotion. OpenAPI generation exposed all expected local auth and admin-user routes without requiring network access.
 

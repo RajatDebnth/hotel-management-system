@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
@@ -20,6 +21,7 @@ async def lifespan(_application: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    settings.uploads_dir.mkdir(parents=True, exist_ok=True)
     configure_logging(settings.log_level)
     application = FastAPI(
         title=settings.app_name,
@@ -42,6 +44,7 @@ def create_app() -> FastAPI:
         frontend_origin=settings.cors_origins[0],
         session_cookie_name=settings.session_cookie_name,
     )
+    application.mount("/media", StaticFiles(directory=settings.uploads_dir), name="media")
 
     @application.exception_handler(Exception)
     async def unhandled_exception(request: Request, exception: Exception) -> JSONResponse:

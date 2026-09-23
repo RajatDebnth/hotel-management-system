@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.core.config import get_settings
 from app.core.passwords import hash_password
+from app.core.storage import prepare_uploads
 from app.db.session import get_engine
 
 SCHEMA_VERSION = 2
@@ -216,6 +217,19 @@ SEED_STATEMENTS = [
       ('10000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001'),
       ('10000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000002')
       on conflict do nothing""",
+    """insert into room_images
+      (id, category_id, storage_path, alt_text, sort_order, is_cover) values
+      ('70000000-0000-0000-0000-000000000001',
+       '10000000-0000-0000-0000-000000000001', 'demo/deluxe-king.png',
+       'Deluxe King room with neutral decor and natural light', 0, 0),
+      ('70000000-0000-0000-0000-000000000002',
+       '10000000-0000-0000-0000-000000000002', 'demo/family-suite.png',
+       'Family Suite with connected king and twin sleeping zones', 0, 0),
+      ('70000000-0000-0000-0000-000000000003',
+       '10000000-0000-0000-0000-000000000003', 'demo/garden-twin.png',
+       'Garden Twin room with two beds and a green garden view', 0, 0)
+      on conflict(id) do update set storage_path=excluded.storage_path,
+        alt_text=excluded.alt_text, sort_order=excluded.sort_order""",
 ]
 
 
@@ -230,12 +244,16 @@ async def initialize_database(
     *,
     admin_password: str | None = None,
     announce_admin: bool = False,
+    uploads_dir: Path | None = None,
 ) -> InitialAdminCredential | None:
     target = engine or get_engine()
     settings = get_settings()
+    runtime_uploads = uploads_dir
     if engine is None:
         settings.database_path.parent.mkdir(parents=True, exist_ok=True)
-        settings.uploads_dir.mkdir(parents=True, exist_ok=True)
+        runtime_uploads = runtime_uploads or settings.uploads_dir
+    if runtime_uploads is not None:
+        prepare_uploads(runtime_uploads)
     async with target.begin() as connection:
         current = (await connection.exec_driver_sql("PRAGMA user_version")).scalar_one()
         if current not in range(SCHEMA_VERSION + 1):

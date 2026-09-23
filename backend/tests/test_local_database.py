@@ -234,6 +234,9 @@ async def test_sqlite_services_preserve_catalog_booking_and_reports(tmp_path: Pa
             catalog = await list_categories(session, 1, 10, "")
             assert catalog.total == 3
             assert catalog.items[0].base_price == Decimal("4400.00")
+            assert catalog.items[0].images[0].url == (
+                "http://localhost:8000/media/demo/garden-twin.png"
+            )
             assert len((await inventory(session)).rooms) == 4
 
             category_id = await write_record(

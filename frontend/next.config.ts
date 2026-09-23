@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "http", hostname: "localhost", port: "8000", pathname: "/media/**" },
+    ],
+  },
   async headers() {
     return [
       {
@@ -13,7 +18,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https: http://localhost:8000; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http://localhost:8000; connect-src 'self' https: http://localhost:8000; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
           },
         ],
       },

@@ -1,6 +1,7 @@
 from datetime import date
 from decimal import Decimal
 from math import ceil
+from urllib.parse import quote
 from uuid import UUID
 
 from sqlalchemy import bindparam, text
@@ -41,8 +42,8 @@ having (not :has_dates or count(distinct r.id) > 0)
 
 
 def _storage_url(path: str) -> str:
-    base_url = str(get_settings().supabase_url).rstrip("/")
-    return f"{base_url}/storage/v1/object/public/room-images/{path}"
+    base_url = str(get_settings().api_url).rstrip("/")
+    return f"{base_url}/media/{quote(path, safe='/')}"
 
 
 async def _relations(
