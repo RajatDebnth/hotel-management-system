@@ -11,7 +11,6 @@ import {
   updateAdminImage,
   uploadAdminImage,
 } from "@/lib/api";
-import { createClient } from "@/lib/supabase/client";
 
 type Kind = "categories" | "rooms" | "facilities";
 
@@ -22,16 +21,10 @@ export function InventoryManager({ inventory }: { inventory: AdminInventory }) {
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
 
-  async function token() {
-    const { data } = await createClient().auth.getSession();
-    if (!data.session) throw new Error("Your session expired. Please sign in again.");
-    return data.session.access_token;
-  }
-
-  async function act(action: (accessToken: string) => Promise<unknown>) {
+  async function act(action: () => Promise<unknown>) {
     setPending(true); setMessage("");
     try {
-      await action(await token());
+      await action();
       setEditing(null); setMessage("Inventory updated."); router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Inventory update failed.");
@@ -39,7 +32,7 @@ export function InventoryManager({ inventory }: { inventory: AdminInventory }) {
   }
 
   async function remove(kind: Kind | "images", id: string) {
-    await act((accessToken) => deleteAdminRecord(kind, id, accessToken));
+    await act(() => deleteAdminRecord(kind, id));
   }
 
   return (
@@ -52,10 +45,10 @@ export function InventoryManager({ inventory }: { inventory: AdminInventory }) {
         <section className="admin-panel h-fit p-5 sm:p-6">
           <p className="admin-kicker">Editor</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight">{editing ? "Edit" : "Add"} {tab.slice(0, -1)}</h2>
-          {tab === "categories" && <CategoryForm key={editing ?? "new"} item={inventory.categories.find((x) => x.id === editing)} pending={pending} submit={(payload) => act((accessToken) => saveAdminRecord("categories", payload, accessToken, editing ?? undefined))} />}
-          {tab === "rooms" && <RoomForm key={editing ?? "new"} item={inventory.rooms.find((x) => x.id === editing)} categories={inventory.categories} pending={pending} submit={(payload) => act((accessToken) => saveAdminRecord("rooms", payload, accessToken, editing ?? undefined))} />}
-          {tab === "facilities" && <FacilityForm key={editing ?? "new"} item={inventory.facilities.find((x) => x.id === editing)} pending={pending} submit={(payload) => act((accessToken) => saveAdminRecord("facilities", payload, accessToken, editing ?? undefined))} />}
-          {tab === "images" && <ImageForm categories={inventory.categories} pending={pending} submit={(form) => act((accessToken) => uploadAdminImage(form, accessToken))} />}
+          {tab === "categories" && <CategoryForm key={editing ?? "new"} item={inventory.categories.find((x) => x.id === editing)} pending={pending} submit={(payload) => act(() => saveAdminRecord("categories", payload, editing ?? undefined))} />}
+          {tab === "rooms" && <RoomForm key={editing ?? "new"} item={inventory.rooms.find((x) => x.id === editing)} categories={inventory.categories} pending={pending} submit={(payload) => act(() => saveAdminRecord("rooms", payload, editing ?? undefined))} />}
+          {tab === "facilities" && <FacilityForm key={editing ?? "new"} item={inventory.facilities.find((x) => x.id === editing)} pending={pending} submit={(payload) => act(() => saveAdminRecord("facilities", payload, editing ?? undefined))} />}
+          {tab === "images" && <ImageForm categories={inventory.categories} pending={pending} submit={(form) => act(() => uploadAdminImage(form))} />}
           {editing && <button onClick={() => setEditing(null)} className="mt-3 text-sm font-semibold text-neutral-500 underline underline-offset-4 hover:text-neutral-950">Cancel editing</button>}
         </section>
         <section className="admin-panel p-5 sm:p-6">
@@ -67,7 +60,7 @@ export function InventoryManager({ inventory }: { inventory: AdminInventory }) {
             {tab === "categories" && inventory.categories.map((item) => <Row key={item.id} title={item.name} detail={`${item.slug} · ₹${Number(item.base_price).toLocaleString("en-IN")} · ${item.max_guests} guests${item.is_active ? "" : " · inactive"}`} edit={() => setEditing(item.id)} remove={() => remove(tab, item.id)} />)}
             {tab === "rooms" && inventory.rooms.map((item) => <Row key={item.id} title={`Room ${item.room_number}`} detail={`${item.category_name} · ${item.status}${item.floor === null ? "" : ` · floor ${item.floor}`}`} edit={() => setEditing(item.id)} remove={() => remove(tab, item.id)} />)}
             {tab === "facilities" && inventory.facilities.map((item) => <Row key={item.id} title={item.name} detail={`${item.icon ?? "No icon"}${item.is_active ? "" : " · inactive"}`} edit={() => setEditing(item.id)} remove={() => remove(tab, item.id)} />)}
-            {tab === "images" && inventory.images.map((item) => <div key={item.id} className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center"><Image unoptimized src={item.url} alt={item.alt_text} width={144} height={96} className="h-24 w-36 border border-neutral-200 object-cover" /><div className="min-w-0 flex-1"><p className="font-semibold">{item.alt_text}</p><p className="mt-1 truncate text-xs text-neutral-500">Order {item.sort_order}{item.is_cover ? " · Cover" : ""}</p></div><div className="flex gap-2">{!item.is_cover && <button onClick={() => act((accessToken) => updateAdminImage(item.id, { alt_text: item.alt_text, sort_order: item.sort_order, is_cover: true }, accessToken))} className="admin-secondary-button">Set cover</button>}<button onClick={() => remove(tab, item.id)} className="admin-secondary-button border-neutral-950">Delete</button></div></div>)}
+            {tab === "images" && inventory.images.map((item) => <div key={item.id} className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center"><Image unoptimized src={item.url} alt={item.alt_text} width={144} height={96} className="h-24 w-36 border border-neutral-200 object-cover" /><div className="min-w-0 flex-1"><p className="font-semibold">{item.alt_text}</p><p className="mt-1 truncate text-xs text-neutral-500">Order {item.sort_order}{item.is_cover ? " · Cover" : ""}</p></div><div className="flex gap-2">{!item.is_cover && <button onClick={() => act(() => updateAdminImage(item.id, { alt_text: item.alt_text, sort_order: item.sort_order, is_cover: true }))} className="admin-secondary-button">Set cover</button>}<button onClick={() => remove(tab, item.id)} className="admin-secondary-button border-neutral-950">Delete</button></div></div>)}
           </div>
         </section>
       </div>

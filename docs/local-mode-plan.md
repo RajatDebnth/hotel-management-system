@@ -1,6 +1,6 @@
 # Local-only mode plan (SQLite + FastAPI)
 
-**Status:** Phases 0-3 complete on `codex/local-sqlite-mode`; Phase 4 is ready.
+**Status:** Phases 0-4 complete on `codex/local-sqlite-mode`; Phase 5 is ready.
 
 **Date:** 2026-09-23
 
@@ -450,7 +450,7 @@ Email verification and emailed password reset cannot work without a mail service
 
 ## 11. Phase 4 - Frontend changes
 
-**Status:** ready.
+**Status:** complete on 2026-09-24.
 
 Rendering stays as it is. Only the data-access and identity plumbing changes.
 
@@ -499,6 +499,10 @@ Rendering stays as it is. Only the data-access and identity plumbing changes.
 Remaining frontend work is limited to adjusting tests in
 
 `src/lib/api.test.ts`, and updating the Playwright spec in `e2e/`.
+
+Phase 4 completion also added the local administrator user/role screen, regenerated
+the FastAPI contract, removed obsolete local Supabase variables, and verified the
+complete customer and administrator journeys at desktop and mobile sizes.
 
 ## 12. Phase 5 - Remove hosting and cloud assets
 

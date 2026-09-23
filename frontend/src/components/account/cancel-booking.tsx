@@ -4,7 +4,6 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { cancelBooking } from "@/lib/api";
-import { createClient } from "@/lib/supabase/client";
 
 export function CancelBooking({ reference }: { reference: string }) {
   const router = useRouter();
@@ -18,9 +17,7 @@ export function CancelBooking({ reference }: { reference: string }) {
     setError("");
     const form = new FormData(event.currentTarget);
     try {
-      const { data } = await createClient().auth.getSession();
-      if (!data.session) throw new Error("Your session expired. Please sign in again.");
-      await cancelBooking(reference, String(form.get("reason")), data.session.access_token);
+      await cancelBooking(reference, String(form.get("reason")));
       setOpen(false);
       router.refresh();
     } catch (caught) {

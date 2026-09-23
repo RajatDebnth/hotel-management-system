@@ -10,8 +10,6 @@ afterEach(() => {
 describe("room availability filters", () => {
   it("serializes stay and price filters into the API request", async () => {
     vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:8000");
-    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
-    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ items: [], page: 1, page_size: 6, total: 0, pages: 0 }),
@@ -39,5 +37,6 @@ describe("room availability filters", () => {
       max_price: "8000",
       category: "family-suite",
     });
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ credentials: "include" });
   });
 });

@@ -2,13 +2,12 @@ import { redirect } from "next/navigation";
 
 import { InventoryManager } from "@/components/admin/inventory-manager";
 import { getAdminInventory } from "@/lib/api";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionCookieHeader } from "@/lib/auth/session";
 
 export default async function AdminInventoryPage() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getSession();
-  if (!data.session) redirect("/login?next=/admin/inventory");
-  const inventory = await getAdminInventory(data.session.access_token);
+  const cookie = await getSessionCookieHeader();
+  if (!cookie) redirect("/login?next=/admin/inventory");
+  const inventory = await getAdminInventory({ cookie });
   return (
     <main className="admin-page">
       <header className="border-b border-neutral-300 pb-7">

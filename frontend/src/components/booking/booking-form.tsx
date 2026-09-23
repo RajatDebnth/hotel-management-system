@@ -5,7 +5,6 @@ import Link from "next/link";
 
 import { createBooking } from "@/lib/api";
 import { bookingSummary } from "@/lib/booking";
-import { createClient } from "@/lib/supabase/client";
 
 type Props = {
   categoryId: string;
@@ -40,8 +39,6 @@ export function BookingForm(props: Props) {
     setError("");
     const data = new FormData(event.currentTarget);
     try {
-      const { data: auth } = await createClient().auth.getSession();
-      if (!auth.session?.access_token) throw new Error("Your session expired. Please sign in again.");
       const result = await createBooking({
         category_id: props.categoryId,
         check_in: checkIn,
@@ -52,7 +49,7 @@ export function BookingForm(props: Props) {
         guest_email: String(data.get("guest_email")),
         guest_phone: String(data.get("guest_phone")),
         special_requests: String(data.get("special_requests")) || null,
-      }, auth.session.access_token);
+      });
       setReference(result.booking_reference);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Booking could not be completed.");

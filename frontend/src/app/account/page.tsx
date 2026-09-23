@@ -2,17 +2,19 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { ProfileForm } from "@/components/account/profile-form";
+import { changePassword } from "@/app/auth/actions";
+import { fieldClassName } from "@/components/auth/auth-shell";
 import { getBookings, getProfile } from "@/lib/api";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionCookieHeader } from "@/lib/auth/session";
 
 const money = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" });
 
-export default async function AccountPage() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getSession();
-  if (!data.session) redirect("/login?next=/account");
+export default async function AccountPage({ searchParams }: { searchParams: Promise<{ error?: string; message?: string }> }) {
+  const params = await searchParams;
+  const cookie = await getSessionCookieHeader();
+  if (!cookie) redirect("/login?next=/account");
   const [profile, bookings] = await Promise.all([
-    getProfile(data.session.access_token), getBookings(data.session.access_token),
+    getProfile({ cookie }), getBookings({ cookie }),
   ]);
 
   return (
@@ -20,8 +22,21 @@ export default async function AccountPage() {
       <p className="eyebrow text-[#947039]">Customer account</p>
       <h1 className="mt-2 font-heading text-5xl">Welcome, {profile.full_name}</h1>
       <p className="mt-3 text-[#5d6d65]">Manage your contact details and reservations.</p>
+      {(params.error || params.message) && <p className={`mt-6 rounded-xl p-4 text-sm ${params.error ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"}`} role={params.error ? "alert" : "status"}>{params.error ?? params.message}</p>}
       <div className="mt-10 grid gap-8 lg:grid-cols-[.8fr_1.2fr]">
-        <ProfileForm profile={profile} />
+        <div className="grid h-fit gap-8">
+          <ProfileForm profile={profile} />
+          <form action={changePassword} className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
+            <h2 className="font-heading text-3xl">Change password</h2>
+            <p className="mt-2 text-sm text-[#5d6d65]">Use at least 12 characters.</p>
+            <div className="mt-6 grid gap-4">
+              <label className="grid gap-2 text-sm font-semibold">Current password<input className={fieldClassName} name="currentPassword" type="password" autoComplete="current-password" required /></label>
+              <label className="grid gap-2 text-sm font-semibold">New password<input className={fieldClassName} name="newPassword" type="password" autoComplete="new-password" minLength={12} required /></label>
+              <label className="grid gap-2 text-sm font-semibold">Confirm new password<input className={fieldClassName} name="confirmPassword" type="password" autoComplete="new-password" minLength={12} required /></label>
+            </div>
+            <button className="mt-6 rounded-full bg-[#17352d] px-6 py-3 font-semibold text-white">Update password</button>
+          </form>
+        </div>
         <section className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-end justify-between gap-4"><div><p className="eyebrow text-[#947039]">Your stays</p><h2 className="mt-2 font-heading text-3xl">Reservations</h2></div><Link href="/rooms" className="text-sm font-semibold underline">Book another stay</Link></div>
           {bookings.items.length === 0 ? (

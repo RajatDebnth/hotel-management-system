@@ -26,10 +26,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <label className="block text-sm font-medium">Password
           <input className={fieldClassName} name="password" type="password" autoComplete="current-password" required />
         </label>
-        <div className="text-right"><Link className="text-sm underline" href="/forgot-password">Forgot password?</Link></div>
+        <p className="text-right text-sm text-muted-foreground">Password changes are available after sign-in.</p>
         <SubmitButton>Sign in</SubmitButton>
       </form>
     </AuthShell>
   );
 }
-

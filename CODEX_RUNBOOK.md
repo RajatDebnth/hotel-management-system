@@ -13,12 +13,12 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 ## Current state
 
-- Current step: **Step 21 - Local image storage**
+- Current step: **Step 22 - Frontend local-session migration**
 - Status: **DONE**
-- Last completed step: **Step 21 - Local image storage**
-- Application state: FastAPI now owns the complete local backend: SQLite data, local cookie authentication, and filesystem image storage. Validated uploads are stored under ignored `backend/data/uploads`, served from `/media`, and coordinated with metadata using compensating cleanup and quarantine-based deletion. Three tracked generated room photographs are copied and seeded idempotently for the public catalog. No backend runtime Supabase configuration or network call remains. The frontend still uses its old Supabase session client until Step 22. The cloud release remains recoverable; payment Steps 15 and 16 remain paused.
+- Last completed step: **Step 22 - Frontend local-session migration**
+- Application state: The local application now uses SQLite, FastAPI cookie authentication, local filesystem media, and a Next.js frontend with credentialed cookie requests throughout. Customer registration, login/logout, profile, password change, booking, cancellation, and guards work locally. Administrator guards, reports, inventory, operations, and user-role controls work in the existing sidebar dashboard. No frontend or backend runtime Supabase dependency remains. Both local servers are running; the cloud release remains recoverable, and payment Steps 15 and 16 remain paused.
 - User action currently required: None. The implementation defaults in `docs/local-mode-plan.md` are approved project defaults unless the user requests a change before the relevant phase.
-- Next command: Say **"do next"** to implement **Step 22 - Frontend local-session migration**.
+- Next command: Say **"do next"** to implement **Step 23 - Remove cloud runtime and deployment assets**.
 
 ## Standard execution contract
 
@@ -620,7 +620,7 @@ FRONTEND_URL=http://localhost:3000
 
 ## Step 22 - Frontend local-session migration
 
-**Status:** READY
+**Status:** DONE
 
 **Objective:** Replace Supabase frontend clients and bearer tokens with same-origin cookie credentials and local authentication flows.
 
@@ -649,7 +649,7 @@ FRONTEND_URL=http://localhost:3000
 
 ## Step 23 - Remove cloud runtime and deployment assets
 
-**Status:** PENDING
+**Status:** READY
 
 **Objective:** Remove Supabase, Render, Vercel, and cloud CI runtime dependencies after the local replacement paths pass.
 
@@ -693,6 +693,8 @@ FRONTEND_URL=http://localhost:3000
 - 2026-09-23: Began the local-only migration on `codex/local-sqlite-mode` while preserving cloud commit `b617082` on `main` and the annotated `supabase-cloud-v1` tag. Selected a versioned SQLite initializer, idempotent first-run seed, standard-library PBKDF2 password hashing, generated first-run `admin@example.com` password, authenticated password changes, retained local `/docs`, no committed database, no default LAN mode, and a deliberate port of the existing async raw-SQL data layer rather than an ORM rewrite.
 
 ## Completion log
+
+- 2026-09-24: Step 22 completed. Replaced Supabase browser/server/proxy session clients and bearer-token plumbing with a shared local session-cookie contract, credentialed browser requests, server-side cookie forwarding, local registration/login/logout, authenticated password changes, and cookie-based account/admin/book guards. Removed callback/reset-email flows, frontend Supabase dependencies and environment variables, and added localhost API defaults. Added a local admin users screen with protected role changes, regenerated OpenAPI TypeScript contracts, and expanded Playwright coverage for anonymous guards, customer registration/profile/password/booking/cancellation, administrator role management, and all admin workspaces. Frontend lint, type checking, all eight unit tests, production build, and all ten desktop/mobile Playwright tests passed. Both local servers are running.
 
 - 2026-09-23: Step 21 completed. Replaced Supabase Storage HTTP calls and credentials with confined local paths, exclusive file creation, compensating upload cleanup, quarantine-based deletion rollback, startup orphan cleanup, and a FastAPI `/media` mount. Catalog and admin responses now return URL-encoded local media URLs. Added three tracked, generated 1536×1024 room photographs for Deluxe King, Family Suite, and Garden Twin; first-run setup copies them into ignored runtime storage and idempotently seeds their metadata. Added localhost media allowances to Next.js image configuration and CSP. Backend Ruff and all 58 tests passed, covering demo copying, path traversal, signatures, size/type validation, upload/read/update/delete, database-failure cleanup, delete restoration, metadata seeding, and public URLs. A direct media request returned `200 image/png`; frontend verification remained green.
 

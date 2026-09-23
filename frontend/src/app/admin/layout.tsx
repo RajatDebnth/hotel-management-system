@@ -2,20 +2,12 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { AdminSidebarNav } from "@/components/admin/admin-sidebar-nav";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const userId = claimsData?.claims?.sub;
-  if (!userId) redirect("/login?next=/admin");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, full_name")
-    .eq("id", userId)
-    .single();
-  if (profile?.role !== "admin") redirect("/account?message=Administrator+access+is+required.");
+  const user = await getCurrentUser();
+  if (!user) redirect("/login?next=/admin");
+  if (user.role !== "admin") redirect("/account?message=Administrator+access+is+required.");
 
   return (
     <div className="admin-shell min-h-screen bg-neutral-100 text-neutral-950 lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
@@ -34,7 +26,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           </div>
 
           <div className="mt-auto hidden border-t border-neutral-200 pt-5 lg:block">
-            <p className="truncate text-sm font-semibold">{profile.full_name || "Administrator"}</p>
+            <p className="truncate text-sm font-semibold">{user.email || "Administrator"}</p>
             <p className="mt-1 text-xs uppercase tracking-wider text-neutral-500">Administrator access</p>
           </div>
         </div>

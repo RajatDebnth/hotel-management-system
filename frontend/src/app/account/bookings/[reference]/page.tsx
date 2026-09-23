@@ -3,16 +3,15 @@ import { notFound, redirect } from "next/navigation";
 
 import { CancelBooking } from "@/components/account/cancel-booking";
 import { getBooking } from "@/lib/api";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionCookieHeader } from "@/lib/auth/session";
 
 const money = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" });
 
 export default async function BookingDetail({ params }: { params: Promise<{ reference: string }> }) {
   const { reference } = await params;
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getSession();
-  if (!data.session) redirect(`/login?next=/account/bookings/${encodeURIComponent(reference)}`);
-  const booking = await getBooking(reference, data.session.access_token).catch((error) => {
+  const cookie = await getSessionCookieHeader();
+  if (!cookie) redirect(`/login?next=/account/bookings/${encodeURIComponent(reference)}`);
+  const booking = await getBooking(reference, { cookie }).catch((error) => {
     if (String(error).includes("not found")) notFound();
     throw error;
   });

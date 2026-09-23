@@ -5,6 +5,7 @@ import {
   BedDouble,
   ClipboardList,
   LayoutDashboard,
+  Users,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
@@ -16,6 +17,7 @@ const primaryLinks = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/admin/inventory", label: "Inventory", icon: BedDouble },
   { href: "/admin/operations", label: "Operations", icon: ClipboardList },
+  { href: "/admin/users", label: "Users", icon: Users },
 ];
 
 const secondaryLinks = [

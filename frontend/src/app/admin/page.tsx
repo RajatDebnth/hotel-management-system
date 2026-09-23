@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getDashboardSummary, getOccupancyReport, getRevenueReport } from "@/lib/api";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionCookieHeader } from "@/lib/auth/session";
 
 type Search = { start_date?: string; end_date?: string };
 const money = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" });
@@ -18,14 +18,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const defaultEnd = new Date(`${startDate}T00:00:00Z`);
   defaultEnd.setUTCDate(defaultEnd.getUTCDate() + 30);
   const endDate = query.end_date ?? iso(defaultEnd);
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getSession();
-  if (!data.session) redirect("/login?next=/admin");
-  const token = data.session.access_token;
+  const cookie = await getSessionCookieHeader();
+  if (!cookie) redirect("/login?next=/admin");
   const [summary, occupancy, revenue] = await Promise.all([
-    getDashboardSummary(token),
-    getOccupancyReport(token, startDate, endDate),
-    getRevenueReport(token, startDate, endDate),
+    getDashboardSummary(undefined, { cookie }),
+    getOccupancyReport(startDate, endDate, { cookie }),
+    getRevenueReport(startDate, endDate, { cookie }),
   ]);
   const cards = [
     ["Active rooms", summary.total_active_rooms],

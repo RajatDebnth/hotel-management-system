@@ -4,12 +4,10 @@ import type { ReactNode } from "react";
 
 import { signOut } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export default async function AccountLayout({ children }: { children: ReactNode }) {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  if (!data?.claims?.sub) redirect("/login?next=/account");
+  if (!await getCurrentUser()) redirect("/login?next=/account");
 
   return (
     <div className="min-h-screen bg-muted/30">

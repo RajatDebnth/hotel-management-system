@@ -21,14 +21,13 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
           <input className={fieldClassName} name="email" type="email" autoComplete="email" required />
         </label>
         <label className="block text-sm font-medium">Password
-          <input className={fieldClassName} name="password" type="password" autoComplete="new-password" minLength={8} required />
+          <input className={fieldClassName} name="password" type="password" autoComplete="new-password" minLength={12} required />
         </label>
         <label className="block text-sm font-medium">Confirm password
-          <input className={fieldClassName} name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required />
+          <input className={fieldClassName} name="confirmPassword" type="password" autoComplete="new-password" minLength={12} required />
         </label>
         <SubmitButton>Create account</SubmitButton>
       </form>
     </AuthShell>
   );
 }
-

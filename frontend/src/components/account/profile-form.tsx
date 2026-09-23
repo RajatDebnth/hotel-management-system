@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 
 import type { Profile } from "@/lib/api";
 import { updateProfile } from "@/lib/api";
-import { createClient } from "@/lib/supabase/client";
 
 export function ProfileForm({ profile }: { profile: Profile }) {
   const router = useRouter();
@@ -18,12 +17,10 @@ export function ProfileForm({ profile }: { profile: Profile }) {
     setMessage("");
     const form = new FormData(event.currentTarget);
     try {
-      const { data } = await createClient().auth.getSession();
-      if (!data.session) throw new Error("Your session expired. Please sign in again.");
       await updateProfile({
         full_name: String(form.get("full_name")),
         phone: String(form.get("phone")) || null,
-      }, data.session.access_token);
+      });
       setMessage("Profile saved.");
       router.refresh();
     } catch (error) {
