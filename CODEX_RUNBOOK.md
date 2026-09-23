@@ -13,12 +13,12 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 ## Current state
 
-- Current step: **Step 19 - SQLite data layer**
+- Current step: **Step 20 - Local authentication**
 - Status: **DONE**
-- Last completed step: **Step 19 - SQLite data layer**
-- Application state: The FastAPI data layer now creates and idempotently seeds `backend/data/hms.db`, serves the public catalog without PostgreSQL or network access, stores money as integer paise, and enforces active-booking overlap protection with serialized transactions plus SQLite triggers. Supabase Auth and Storage are intentionally still present until Steps 20 and 21. The cloud release remains recoverable from `main` or `supabase-cloud-v1`; payment Steps 15 and 16 remain paused.
+- Last completed step: **Step 20 - Local authentication**
+- Application state: FastAPI now owns local registration, login, logout, password changes, signed HttpOnly sessions, current-user/admin authorization, CSRF origin checks, and administrator user-role management. Schema version 2 upgrades existing SQLite databases and creates `admin@example.com` with a one-time generated password shown only on the first backend start. Supabase Auth/JWKS/bearer verification is removed; Supabase remains only for room-image Storage until Step 21. The frontend still uses its old Supabase session client until Step 22. The cloud release remains recoverable; payment Steps 15 and 16 remain paused.
 - User action currently required: None. The implementation defaults in `docs/local-mode-plan.md` are approved project defaults unless the user requests a change before the relevant phase.
-- Next command: Say **"do next"** to implement **Step 20 - Local authentication**.
+- Next command: Say **"do next"** to implement **Step 21 - Local image storage**.
 
 ## Standard execution contract
 
@@ -559,7 +559,7 @@ FRONTEND_URL=http://localhost:3000
 
 ## Step 20 - Local authentication
 
-**Status:** READY
+**Status:** DONE
 
 **Objective:** Replace Supabase Auth and roles with local users, password hashing, signed HttpOnly sessions, CSRF protection, and local admin authorization.
 
@@ -590,9 +590,31 @@ FRONTEND_URL=http://localhost:3000
 
 ## Step 21 - Local image storage
 
-**Status:** PENDING
+**Status:** READY
 
 **Objective:** Replace Supabase Storage with validated local uploads served safely by FastAPI.
+
+**Prerequisites:**
+
+- Step 20 is `DONE`.
+- No user credentials or cloud access are required.
+
+**Work:**
+
+- Store validated JPEG, PNG, and WebP uploads under the ignored local uploads directory.
+- Preserve file-size, signature, parent, cover-image, ordering, and metadata validation.
+- Serve uploaded media through a constrained FastAPI `/media` mount.
+- Return local media URLs from public catalog and administrator inventory responses.
+- Add a small tracked demo-image set or deterministic first-run image seed.
+- Remove the remaining backend Supabase URL/secret configuration and Storage HTTP client.
+
+**Acceptance checks:**
+
+- Upload, public read, metadata update, cover selection, and deletion work offline.
+- Invalid, oversized, disguised, and traversal-style files are rejected safely.
+- Database/file failures do not leave orphaned metadata or files.
+- No backend Supabase dependency or credential is required.
+- Backend lint and all relevant tests pass.
 
 ---
 
@@ -650,6 +672,8 @@ FRONTEND_URL=http://localhost:3000
 - 2026-09-23: Began the local-only migration on `codex/local-sqlite-mode` while preserving cloud commit `b617082` on `main` and the annotated `supabase-cloud-v1` tag. Selected a versioned SQLite initializer, idempotent first-run seed, standard-library PBKDF2 password hashing, generated first-run `admin@example.com` password, authenticated password changes, retained local `/docs`, no committed database, no default LAN mode, and a deliberate port of the existing async raw-SQL data layer rather than an ORM rewrite.
 
 ## Completion log
+
+- 2026-09-23: Step 20 completed. Added schema-v2 email/password migration, case-insensitive unique local accounts, 600,000-iteration salted PBKDF2-HMAC-SHA256 password hashes, generated first-run `admin@example.com` credentials, a persisted ignored signing key, eight-hour HS256 HttpOnly SameSite=Lax sessions, local register/login/logout/current-user/admin-check/password-change endpoints, origin-based CSRF protection for cookie-authenticated writes, optional local identity on enquiries, and admin-only user listing/role changes with self-change and last-admin safeguards. Removed backend Supabase JWKS and bearer-token verification while retaining only temporary Storage configuration. Backend Ruff and all 54 tests passed, including v1-to-v2 migration, hashing, signing-key stability, cookie flags, session restoration, duplicate/generic login handling, password rotation, logout, missing/invalid/expired sessions, CSRF rejection, customer/admin isolation, self-role denial, and administrator promotion. OpenAPI generation exposed all expected local auth and admin-user routes without requiring network access.
 
 - 2026-09-23: Step 19 completed. Replaced the PostgreSQL/asyncpg/psycopg runtime with async SQLite, first-run schema versioning, idempotent catalog seeds, WAL/foreign-key/busy-timeout pragmas, serialized `IMMEDIATE` transactions, and database triggers for active-booking overlap rejection. Ported catalog, booking, profiles, enquiries, inventory, operations, dashboard, occupancy, and revenue SQL; stored all money as integer paise with exact `Decimal` boundaries; simplified the Windows server launcher; and ignored local runtime data. Backend Ruff and all 50 tests passed, including real SQLite service, reseed, FK, money, concurrent booking, overlap, and back-to-back coverage. A no-environment startup returned `200` with three catalog categories, live health/catalog smoke checks returned `200`, and frontend lint, types, eight tests, and production build passed.
 

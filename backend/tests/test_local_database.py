@@ -58,8 +58,8 @@ async def insert_booking(
 async def test_database_initializes_and_reseeds_idempotently(tmp_path: Path) -> None:
     engine = build_engine(tmp_path / "data" / "hms.db")
     try:
-        await initialize_database(engine)
-        await initialize_database(engine)
+        credential = await initialize_database(engine, admin_password="TestAdminPassword!23")
+        repeated_credential = await initialize_database(engine)
 
         async with engine.connect() as connection:
             version = (await connection.exec_driver_sql("PRAGMA user_version")).scalar_one()
@@ -72,9 +72,48 @@ async def test_database_initializes_and_reseeds_idempotently(tmp_path: Path) -> 
             ).scalar_one()
 
         assert version == SCHEMA_VERSION
+        assert credential is not None
+        assert credential.email == "admin@example.com"
+        assert repeated_credential is None
         assert categories == 3
         assert rooms == 4
         assert foreign_keys == 1
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_schema_version_one_is_upgraded_with_local_credentials(tmp_path: Path) -> None:
+    engine = build_engine(tmp_path / "hms.db")
+    try:
+        async with engine.begin() as connection:
+            await connection.exec_driver_sql("""create table profiles (
+              id text primary key,
+              full_name text not null default '',
+              phone text,
+              avatar_path text,
+              role text not null default 'customer',
+              is_active integer not null default 1,
+              created_at text not null default current_timestamp,
+              updated_at text not null default current_timestamp
+            )""")
+            await connection.exec_driver_sql("PRAGMA user_version=1")
+
+        credential = await initialize_database(
+            engine, admin_password="TestAdminPassword!23"
+        )
+        async with engine.connect() as connection:
+            columns = {
+                row["name"]
+                for row in (
+                    await connection.exec_driver_sql("PRAGMA table_info(profiles)")
+                ).mappings()
+            }
+            version = (await connection.exec_driver_sql("PRAGMA user_version")).scalar_one()
+
+        assert credential is not None
+        assert {"email", "password_hash"} <= columns
+        assert version == SCHEMA_VERSION
     finally:
         await engine.dispose()
 
@@ -178,7 +217,7 @@ async def test_sqlite_services_preserve_catalog_booking_and_reports(tmp_path: Pa
     )
     admin = AuthenticatedUser(
         id=UUID("40000000-0000-0000-0000-000000000002"),
-        email="admin@example.com",
+        email="manager@example.com",
         role="admin",
     )
     try:

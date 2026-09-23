@@ -1,12 +1,14 @@
+import os
+import secrets
+from contextlib import suppress
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException, status
-from fastapi.concurrency import run_in_threadpool
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jwt import PyJWKClient
-from jwt.exceptions import InvalidTokenError, PyJWKClientError
+from fastapi import Depends, HTTPException, Request, status
+from jwt.exceptions import InvalidTokenError
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,77 +16,111 @@ from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.schemas.auth import AuthenticatedUser, TokenClaims
 
-bearer_scheme = HTTPBearer(auto_error=False)
+SESSION_ISSUER = "hms-local"
+SESSION_AUDIENCE = "hms-local"
 
 
-class SupabaseJWTVerifier:
-    def __init__(self, supabase_url: str) -> None:
-        self.issuer = f"{supabase_url.rstrip('/')}/auth/v1"
-        self.jwks_client = PyJWKClient(
-            f"{self.issuer}/.well-known/jwks.json",
-            cache_keys=True,
-            lifespan=600,
+def get_or_create_signing_key(path: Path) -> str:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        key = path.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        key = secrets.token_urlsafe(48)
+        try:
+            with path.open("x", encoding="utf-8") as handle:
+                handle.write(key)
+            with suppress(OSError):
+                os.chmod(path, 0o600)
+        except FileExistsError:
+            key = path.read_text(encoding="utf-8").strip()
+    if len(key) < 32:
+        raise RuntimeError("Local session signing key is invalid")
+    return key
+
+
+class LocalSessionManager:
+    def __init__(self, signing_key: str, lifetime_minutes: int = 480) -> None:
+        self.signing_key = signing_key
+        self.lifetime = timedelta(minutes=lifetime_minutes)
+
+    def create(self, user: AuthenticatedUser, *, now: datetime | None = None) -> str:
+        issued_at = now or datetime.now(UTC)
+        return jwt.encode(
+            {
+                "sub": str(user.id),
+                "email": str(user.email),
+                "iat": issued_at,
+                "exp": issued_at + self.lifetime,
+                "iss": SESSION_ISSUER,
+                "aud": SESSION_AUDIENCE,
+            },
+            self.signing_key,
+            algorithm="HS256",
         )
 
-    async def verify(self, token: str) -> TokenClaims:
+    def verify(self, token: str) -> TokenClaims:
         try:
-            signing_key = await run_in_threadpool(
-                self.jwks_client.get_signing_key_from_jwt,
-                token,
-            )
             payload = jwt.decode(
                 token,
-                signing_key.key,
-                algorithms=["ES256", "RS256"],
-                audience="authenticated",
-                issuer=self.issuer,
-                options={"require": ["exp", "iss", "aud", "sub", "role"]},
+                self.signing_key,
+                algorithms=["HS256"],
+                audience=SESSION_AUDIENCE,
+                issuer=SESSION_ISSUER,
+                options={"require": ["sub", "email", "iat", "exp", "iss", "aud"]},
             )
             return TokenClaims.model_validate(payload)
-        except (InvalidTokenError, PyJWKClientError, ValueError) as error:
+        except (InvalidTokenError, ValueError) as error:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired access token",
-                headers={"WWW-Authenticate": "Bearer"},
+                detail="Invalid or expired session",
             ) from error
 
 
 @lru_cache
-def get_jwt_verifier() -> SupabaseJWTVerifier:
-    supabase_url = get_settings().supabase_url
-    if supabase_url is None:
-        raise RuntimeError("SUPABASE_URL is required for authenticated endpoints")
-    return SupabaseJWTVerifier(str(supabase_url))
+def get_session_manager() -> LocalSessionManager:
+    settings = get_settings()
+    return LocalSessionManager(
+        get_or_create_signing_key(settings.secret_key_path),
+        settings.session_lifetime_minutes,
+    )
+
+
+async def get_optional_claims(
+    request: Request,
+    manager: Annotated[LocalSessionManager, Depends(get_session_manager)],
+) -> TokenClaims | None:
+    token = request.cookies.get(get_settings().session_cookie_name)
+    return manager.verify(token) if token else None
 
 
 async def get_verified_claims(
-    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
-    verifier: Annotated[SupabaseJWTVerifier, Depends(get_jwt_verifier)],
+    claims: Annotated[TokenClaims | None, Depends(get_optional_claims)],
 ) -> TokenClaims:
-    if credentials is None or credentials.scheme.lower() != "bearer":
+    if claims is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
         )
-    return await verifier.verify(credentials.credentials)
+    return claims
 
 
 async def require_user(
     claims: Annotated[TokenClaims, Depends(get_verified_claims)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> AuthenticatedUser:
-    result = await session.execute(
-        text("select role from profiles where id = :user_id and is_active"),
-        {"user_id": claims.sub},
-    )
-    role = result.scalar_one_or_none()
-    if role not in {"customer", "admin"}:
+    row = (
+        await session.execute(
+            text("""select email, role from profiles
+            where id = :user_id and is_active and email is not null"""),
+            {"user_id": claims.sub},
+        )
+    ).mappings().one_or_none()
+    if row is None or row["role"] not in {"customer", "admin"}:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User profile is inactive or unavailable",
         )
-    return AuthenticatedUser(id=claims.sub, email=claims.email, role=role)
+    return AuthenticatedUser(id=claims.sub, email=row["email"], role=row["role"])
 
 
 async def require_admin(

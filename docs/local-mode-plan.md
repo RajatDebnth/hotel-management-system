@@ -1,6 +1,6 @@
 # Local-only mode plan (SQLite + FastAPI)
 
-**Status:** Phases 0-1 complete on `codex/local-sqlite-mode`; Phase 2 is ready.
+**Status:** Phases 0-2 complete on `codex/local-sqlite-mode`; Phase 3 is ready.
 
 **Date:** 2026-09-23
 
@@ -334,6 +334,8 @@ integration tests.
 
 ## 9. Phase 2 - Local authentication
 
+**Status:** complete on 2026-09-23.
+
 ### 9.1 New endpoints
 
 - `POST /api/v1/auth/register` creates a profile with a hashed password and role
@@ -352,13 +354,15 @@ integration tests.
 
 ### 9.2 Credential and session handling
 
-- Passwords are stored as a salted hash (`bcrypt`, or stdlib `hashlib.pbkdf2_hmac`
+- Passwords are stored using standard-library `hashlib.pbkdf2_hmac` with 600,000
 
-  with a per-user salt). Plaintext passwords are never stored or logged.
+  SHA-256 iterations and a per-user random salt. Plaintext passwords are never
+
+  stored or logged.
 
 - Sessions use an HS256 JWT signed with a secret generated on first run and written
 
-  to `backend/data/secret.key`, which is git-ignored. `PyJWT` is already a project
+  to `backend/data/.session-key`, which is git-ignored. `PyJWT` is already a project
 
   dependency, so no new library is needed.
 
@@ -380,11 +384,13 @@ integration tests.
 
 ### 9.3 Roles
 
-- The seed creates one administrator, for example `admin@local` with a documented
+- The seed creates `admin@example.com` with a generated password displayed once in
 
-  password.
+  the local backend terminal.
 
-- Add an Admin section screen that lists users and toggles the `admin` role. This
+- Add an admin API that lists users and toggles the `admin` role. The corresponding
+
+  dashboard screen is delivered with the frontend session migration in Phase 4. This
 
   replaces the old workflow of promoting a user with SQL in the Supabase dashboard.
 
@@ -400,13 +406,17 @@ Email verification and emailed password reset cannot work without a mail service
 
 - Registration auto-confirms the account instead of sending a verification email.
 
-- `frontend/src/app/auth/callback/route.ts` is deleted.
+- `frontend/src/app/auth/callback/route.ts` is deleted in Phase 4.
 
-- `forgot-password` becomes a local "change password" flow for a signed-in user.
+- `forgot-password` becomes a local "change password" flow for a signed-in user in
 
-- `reset-password` is either removed or repurposed as the change-password screen.
+  Phase 4.
+
+- `reset-password` is removed or repurposed in Phase 4.
 
 ## 10. Phase 3 - Images
+
+**Status:** ready.
 
 - `POST /api/v1/admin/inventory/images` keeps its current validation (JPEG, PNG, and
 

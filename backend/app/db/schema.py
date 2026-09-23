@@ -1,11 +1,15 @@
+import secrets
+from dataclasses import dataclass
 from pathlib import Path
+from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.core.config import get_settings
+from app.core.passwords import hash_password
 from app.db.session import get_engine
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 UUID_DEFAULT = """(
   lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' ||
   substr(hex(randomblob(2)), 2) || '-' ||
@@ -16,6 +20,8 @@ UUID_DEFAULT = """(
 SCHEMA_STATEMENTS = [
     """create table if not exists profiles (
       id text primary key,
+      email text,
+      password_hash text,
       full_name text not null default '' check(length(full_name) <= 120),
       phone text check(phone is null or length(phone) <= 30),
       avatar_path text,
@@ -24,6 +30,8 @@ SCHEMA_STATEMENTS = [
       created_at text not null default current_timestamp,
       updated_at text not null default current_timestamp
     )""",
+    """create unique index if not exists profiles_email_unique_idx
+      on profiles(lower(email)) where email is not null""",
     f"""create table if not exists room_categories (
       id text primary key default {UUID_DEFAULT},
       name text not null check(length(name) between 1 and 100),
@@ -211,7 +219,18 @@ SEED_STATEMENTS = [
 ]
 
 
-async def initialize_database(engine: AsyncEngine | None = None) -> None:
+@dataclass(frozen=True)
+class InitialAdminCredential:
+    email: str
+    password: str
+
+
+async def initialize_database(
+    engine: AsyncEngine | None = None,
+    *,
+    admin_password: str | None = None,
+    announce_admin: bool = False,
+) -> InitialAdminCredential | None:
     target = engine or get_engine()
     settings = get_settings()
     if engine is None:
@@ -219,15 +238,38 @@ async def initialize_database(engine: AsyncEngine | None = None) -> None:
         settings.uploads_dir.mkdir(parents=True, exist_ok=True)
     async with target.begin() as connection:
         current = (await connection.exec_driver_sql("PRAGMA user_version")).scalar_one()
-        if current not in (0, SCHEMA_VERSION):
+        if current not in range(SCHEMA_VERSION + 1):
             raise RuntimeError(
-                f"Unsupported local database schema {current}; expected {SCHEMA_VERSION}"
+                f"Unsupported local database schema {current}; expected at most {SCHEMA_VERSION}"
             )
+        if current == 1:
+            await connection.exec_driver_sql("alter table profiles add column email text")
+            await connection.exec_driver_sql("alter table profiles add column password_hash text")
         for statement in SCHEMA_STATEMENTS:
             await connection.exec_driver_sql(statement)
         for statement in SEED_STATEMENTS:
             await connection.exec_driver_sql(statement)
+        existing_admin = (
+            await connection.exec_driver_sql(
+                "select id from profiles where lower(email) = 'admin@example.com'"
+            )
+        ).scalar_one_or_none()
+        credential = None
+        if existing_admin is None:
+            password = admin_password or secrets.token_urlsafe(18)
+            await connection.exec_driver_sql(
+                """insert into profiles
+                (id, email, password_hash, full_name, role)
+                values (?, 'admin@example.com', ?, 'Local Administrator', 'admin')""",
+                (str(uuid4()), hash_password(password)),
+            )
+            credential = InitialAdminCredential("admin@example.com", password)
         await connection.exec_driver_sql(f"PRAGMA user_version={SCHEMA_VERSION}")
+    if credential is not None and announce_admin:
+        print("\nLocal administrator created")
+        print(f"Email: {credential.email}")
+        print(f"One-time initial password: {credential.password}\n")
+    return credential
 
 
 def local_database_exists(path: Path | None = None) -> bool:

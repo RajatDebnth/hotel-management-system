@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 from fastapi.testclient import TestClient
 
 from app.api.v1.routes import catalog as catalog_routes
-from app.core.auth import get_jwt_verifier
+from app.core.auth import get_session_manager
 from app.db.session import get_db_session
 from app.main import app
 from app.schemas.catalog import RoomCategoryListResponse, RoomCategoryResponse
@@ -115,8 +115,13 @@ class EnquirySession:
         self.committed = True
 
 
-async def unused_verifier() -> object:
-    return object()
+class UnusedSessionManager:
+    def verify(self, token: str) -> object:
+        raise AssertionError(f"Session manager unexpectedly received {token}")
+
+
+def unused_session_manager() -> UnusedSessionManager:
+    return UnusedSessionManager()
 
 
 def test_anonymous_enquiry_is_validated_and_created() -> None:
@@ -126,7 +131,7 @@ def test_anonymous_enquiry_is_validated_and_created() -> None:
         yield session
 
     app.dependency_overrides[get_db_session] = session_override
-    app.dependency_overrides[get_jwt_verifier] = unused_verifier
+    app.dependency_overrides[get_session_manager] = unused_session_manager
     try:
         response = TestClient(app).post(
             "/api/v1/enquiries",

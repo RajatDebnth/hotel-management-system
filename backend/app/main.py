@@ -14,7 +14,7 @@ from app.db.schema import initialize_database
 
 @asynccontextmanager
 async def lifespan(_application: FastAPI) -> AsyncIterator[None]:
-    await initialize_database()
+    await initialize_database(announce_admin=True)
     yield
 
 
@@ -39,6 +39,8 @@ def create_app() -> FastAPI:
         SecurityMiddleware,
         enquiry_limit=settings.enquiry_rate_limit,
         enquiry_window_seconds=settings.enquiry_rate_window_seconds,
+        frontend_origin=settings.cors_origins[0],
+        session_cookie_name=settings.session_cookie_name,
     )
 
     @application.exception_handler(Exception)

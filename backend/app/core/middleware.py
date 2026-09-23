@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
 
 class SlidingWindowLimiter:
@@ -41,9 +42,18 @@ class SlidingWindowLimiter:
 
 
 class SecurityMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, enquiry_limit: int, enquiry_window_seconds: int) -> None:
+    def __init__(
+        self,
+        app,
+        enquiry_limit: int,
+        enquiry_window_seconds: int,
+        frontend_origin: str,
+        session_cookie_name: str,
+    ) -> None:
         super().__init__(app)
         self.enquiry_limiter = SlidingWindowLimiter(enquiry_limit, enquiry_window_seconds)
+        self.frontend_origin = frontend_origin
+        self.session_cookie_name = session_cookie_name
 
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
@@ -56,7 +66,16 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         )
         request.state.request_id = request_id
 
-        if request.method == "POST" and request.url.path.endswith("/enquiries"):
+        if (
+            request.method in UNSAFE_METHODS
+            and request.cookies.get(self.session_cookie_name)
+            and request.headers.get("origin") != self.frontend_origin
+        ):
+            response = JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={"detail": "Request origin is not allowed"},
+            )
+        elif request.method == "POST" and request.url.path.endswith("/enquiries"):
             client = request.client.host if request.client else "unknown"
             if not self.enquiry_limiter.allow(client):
                 response: Response = JSONResponse(
