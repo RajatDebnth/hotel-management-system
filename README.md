@@ -82,8 +82,24 @@ npm run verify
 npm run test:e2e
 ```
 
+## Create a shareable ZIP
+
+Commit the intended release and make sure the Git working tree is clean, then run:
+
+```powershell
+python package_local.py
+```
+
+The validated archive is written to `dist/hotel-management-system-local.zip`. It
+contains source, configuration, documentation, and tracked demo images, but never
+contains `.env` files, installed dependencies, build caches, the local database,
+uploads, logs, or the session signing key. After extracting it, a recipient follows
+the installation and startup commands above. See the [local mode guide](docs/local-mode.md)
+for the complete operator workflow.
+
 ## Documentation
 
+- [Local mode guide](docs/local-mode.md)
 - [Architecture](docs/architecture.md)
 - [API](docs/api.md)
 - [Data model](docs/data-model.md)

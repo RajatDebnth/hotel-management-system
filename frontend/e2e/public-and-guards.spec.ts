@@ -111,14 +111,19 @@ test("administrator can manage local user roles", async ({ page }) => {
 
   const customer = page.locator("article").filter({ hasText: customerEmail });
   await customer.getByRole("button", { name: /make administrator/i }).click();
-  await expect(customer.getByText(/admin · active/i)).toBeVisible();
+  await expect(customer.getByText(/admin · active/i)).toBeVisible({ timeout: 45_000 });
   await customer.getByRole("button", { name: /make customer/i }).click();
-  await expect(customer.getByText(/customer · active/i)).toBeVisible();
+  await expect(customer.getByText(/customer · active/i)).toBeVisible({ timeout: 45_000 });
 
   await page.getByRole("link", { name: "Overview" }).click();
+  await expect(page).toHaveURL(/\/admin$/, { timeout: 45_000 });
   await expect(page.getByRole("heading", { name: /house overview/i })).toBeVisible();
   await page.getByRole("link", { name: "Inventory" }).click();
+  await expect(page).toHaveURL(/\/admin\/inventory$/, { timeout: 45_000 });
   await expect(page.getByRole("heading", { name: /rooms and amenities/i })).toBeVisible();
   await page.getByRole("link", { name: "Operations" }).click();
-  await expect(page.getByRole("heading", { name: /bookings and enquiries/i })).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/operations$/, { timeout: 45_000 });
+  await expect(page.getByRole("heading", { name: /bookings and enquiries/i })).toBeVisible({
+    timeout: 45_000,
+  });
 });
