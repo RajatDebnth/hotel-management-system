@@ -1,6 +1,6 @@
 # Local-only mode plan (SQLite + FastAPI)
 
-**Status:** Phases 0-5 complete on `codex/local-sqlite-mode`; Phase 6 is ready.
+**Status:** Phases 0-6 complete on `codex/local-sqlite-mode`; Phase 7 is ready.
 
 **Date:** 2026-09-23
 
@@ -550,6 +550,8 @@ to reintroduce a hosted dependency.
 
 ## 13. Phase 6 - Data tooling and seeding
 
+**Status:** complete on 2026-09-24.
+
 Because the database now lives on disk rather than in a hosted service, provide
 
 simple maintenance scripts.
@@ -581,6 +583,8 @@ Startup behavior:
 The seed must be safe to run repeatedly without creating duplicates.
 
 ## 14. Phase 7 - Tests and documentation
+
+**Status:** ready.
 
 ### 14.1 Backend tests
 
@@ -910,8 +914,6 @@ If the migration is abandoned partway:
 
   tag, which are untouched until the migration is merged.
 
-- Keep `supabase/`, `render.yaml`, and the deployment workflows until Phase 7 has
+- The active branch no longer carries hosted runtime assets. Restore or compare them
 
-  passed the acceptance criteria in section 20. Delaying their deletion keeps a
-
-  clean rollback available for almost the whole migration.
+  from the immutable `supabase-cloud-v1` tag if rollback is required.

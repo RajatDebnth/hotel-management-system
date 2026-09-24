@@ -16,6 +16,14 @@ from app.db.schema import initialize_database
 @asynccontextmanager
 async def lifespan(_application: FastAPI) -> AsyncIterator[None]:
     await initialize_database(announce_admin=True)
+    settings = get_settings()
+    logging.getLogger("app.startup").info(
+        "Local database ready",
+        extra={
+            "database_path": str(settings.database_path.resolve()),
+            "administrator_email": "admin@example.com",
+        },
+    )
     yield
 
 

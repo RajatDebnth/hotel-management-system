@@ -13,12 +13,12 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 ## Current state
 
-- Current step: **Step 23 - Remove cloud runtime and deployment assets**
+- Current step: **Step 24 - Local data tooling and startup workflow**
 - Status: **DONE**
-- Last completed step: **Step 23 - Remove cloud runtime and deployment assets**
-- Application state: The active repository and runtime are local-only: Next.js, FastAPI, SQLite, signed cookie sessions, and local media. Retired Supabase migrations/configuration, hosted smoke scripts, Alembic stub, Render/Vercel workflows/configuration, cloud deployment documents, and ignored local cloud settings have been removed. Active build, architecture, API, data, testing, backup, and project-instruction documents now match the local system. Both local services are running and return `200`; the prior hosted release remains recoverable from the `supabase-cloud-v1` tag, and payment Steps 15 and 16 remain paused.
+- Last completed step: **Step 24 - Local data tooling and startup workflow**
+- Application state: The local-only application now includes idempotent seed, confined rollback-safe reset, versioned atomic JSON export, strictly validated transactional import, sensitive booking CSV export, startup database/admin logging, and a cross-platform `python start_local.py` launcher that manages both services. Maintenance commands require explicit confirmation for destructive work and refuse reset/import while FastAPI is running. Both services are currently running and return `200`; payment Steps 15 and 16 remain paused.
 - User action currently required: None. The implementation defaults in `docs/local-mode-plan.md` are approved project defaults unless the user requests a change before the relevant phase.
-- Next command: Say **"do next"** to implement **Step 24 - Local data tooling and startup workflow**.
+- Next command: Say **"do next"** to implement **Step 25 - Local release verification and packaging**.
 
 ## Standard execution contract
 
@@ -657,7 +657,7 @@ FRONTEND_URL=http://localhost:3000
 
 ## Step 24 - Local data tooling and startup workflow
 
-**Status:** READY
+**Status:** DONE
 
 **Objective:** Add reset/seed/backup scripts and simple cross-platform local startup commands.
 
@@ -665,7 +665,7 @@ FRONTEND_URL=http://localhost:3000
 
 ## Step 25 - Local release verification and packaging
 
-**Status:** PENDING
+**Status:** READY
 
 **Objective:** Complete offline E2E/security tests, rewrite documentation, and verify a clean zip-and-run handoff.
 
@@ -693,6 +693,8 @@ FRONTEND_URL=http://localhost:3000
 - 2026-09-23: Began the local-only migration on `codex/local-sqlite-mode` while preserving cloud commit `b617082` on `main` and the annotated `supabase-cloud-v1` tag. Selected a versioned SQLite initializer, idempotent first-run seed, standard-library PBKDF2 password hashing, generated first-run `admin@example.com` password, authenticated password changes, retained local `/docs`, no committed database, no default LAN mode, and a deliberate port of the existing async raw-SQL data layer rather than an ORM rewrite.
 
 ## Completion log
+
+- 2026-09-24: Step 24 completed. Added an idempotent seed command, reset confined to `backend/data` with staged rollback and explicit `--yes`, versioned/atomic all-table JSON export, exact-format/schema/table/column validation with transactional import, and a booking/report CSV export. Sensitive exports default to ignored storage and refuse overwrite; reset/import refuse to run while FastAPI is live. Added startup database-path/administrator logging and a cross-platform root `start_local.py` launcher with prerequisite checks and managed child-process shutdown. Added five disposable maintenance tests covering round trips, tamper rejection without data loss, overwrite refusal, reset confinement/reseed/media restoration, and CSV content. Exercised all five CLI workflows against a disposable installation and removed its generated database, media, password, JSON, and CSV afterward. Backend Ruff and all 56 tests passed; frontend lint, type checking, all eight tests, and production build passed. The combined launcher started both services, and backend/frontend returned `200`.
 
 - 2026-09-24: Step 23 completed. Removed the Render Blueprint, Vercel/Render release and keep-warm workflows, eight hosted smoke scripts, the obsolete Alembic stub, hosted schema test, complete Supabase migrations/config/seed/local state, and cloud deployment/production documents. Removed retired cloud settings from the ignored backend environment without displaying their values. Rewrote the active build plan, project instructions, root/frontend READMEs, architecture, API, data-model, backup/recovery, and testing documents for the local SQLite/cookie/filesystem architecture; the hosted release remains recoverable through `supabase-cloud-v1`. Backend Ruff and all 51 active local tests passed; frontend lint, type checking, all eight tests, and production build passed. Restarted both local services from the cleaned tree; backend health, three-item catalog, and frontend returned `200`.
 

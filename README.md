@@ -40,6 +40,14 @@ npm run dev
 
 Open <http://localhost:3000>. The checked-in defaults already point the frontend at the local API; `.env.local` is optional for the standard ports.
 
+After installing both applications, you can start them together from the repository root:
+
+```powershell
+python start_local.py
+```
+
+Press `Ctrl+C` to stop both. `python start_local.py --check` validates the virtual environment and npm command without starting anything.
+
 ## Local data
 
 - Database: `backend/data/hms.db`
@@ -47,6 +55,20 @@ Open <http://localhost:3000>. The checked-in defaults already point the frontend
 - Session signing key: `backend/data/.session-key`
 
 The entire `backend/data/` directory is ignored by Git. Back up the database and uploads together while both services are stopped. See [backup and recovery](docs/backup-recovery.md).
+
+## Data maintenance
+
+Run these from `backend/`. Stop the backend before reset or import.
+
+```powershell
+.\.venv\Scripts\python.exe scripts\seed_db.py
+.\.venv\Scripts\python.exe scripts\export_db.py
+.\.venv\Scripts\python.exe scripts\export_bookings.py
+.\.venv\Scripts\python.exe scripts\import_db.py <backup.json> --yes
+.\.venv\Scripts\python.exe scripts\reset_db.py --yes
+```
+
+Reset deletes the local database and uploaded media. Import replaces all table data but does not contain image bytes. Both destructive commands require `--yes`; create a backup first.
 
 ## Verification
 

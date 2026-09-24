@@ -22,4 +22,24 @@ The SQLite database may use `-wal` and `-shm` sidecars while the backend is runn
 
 If `.session-key` is not restored, FastAPI creates a new key and all previous browser sessions become invalid; users can sign in again. If no database is restored, startup creates a fresh seeded installation and a new administrator password.
 
-Automated export/import tooling is implemented in Step 24. Until then, the stopped-directory copy above is the supported backup method.
+## JSON export and import
+
+From `backend/`:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\export_db.py
+.\.venv\Scripts\python.exe scripts\import_db.py <backup.json> --yes
+```
+
+The versioned JSON export contains every application table, including password hashes and customer data, and is therefore sensitive. By default it is written below ignored `backend/data/exports/`, refuses to overwrite an existing file, and uses an atomic replacement. Use `--force` only when replacement is intentional.
+
+Import validates the format, schema version, exact tables, and exact columns before opening its replacement transaction. Any validation or insertion failure leaves the existing table data unchanged. Stop FastAPI before importing. JSON does not contain uploaded image bytes, so restore the matching `uploads/` directory separately.
+
+## Reset and reporting export
+
+```powershell
+.\.venv\Scripts\python.exe scripts\reset_db.py --yes
+.\.venv\Scripts\python.exe scripts\export_bookings.py
+```
+
+Reset is confined to `backend/data`, stages existing database/media paths for rollback, recreates the seed, and prints a new one-time administrator password. It permanently replaces local records and media after successful recreation. The booking CSV includes guest contact details and monetary values in paise; protect it as customer data.

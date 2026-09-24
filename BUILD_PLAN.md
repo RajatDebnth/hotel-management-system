@@ -85,6 +85,7 @@ backend/
 
 docs/                      active local architecture and operations
 CODEX_RUNBOOK.md           ordered execution state
+start_local.py             cross-platform two-service launcher
 ```
 
 ## 5. Data model
@@ -147,7 +148,6 @@ Security-sensitive work reviews cookie/session handling, authorization, origin c
 
 `CODEX_RUNBOOK.md` is the execution tracker.
 
-- Step 23 removes retired hosted runtime/deployment assets and rewrites active documentation.
-- Step 24 adds explicit seed/reset/export/import/booking-export tooling and simple local startup commands.
+- Steps 23 and 24 completed hosted-asset retirement, local documentation, data tooling, and the two-service launcher.
 - Step 25 completes offline release/security verification and zip-and-run packaging.
 - Payment Steps 15 and 16 remain paused until the user explicitly resumes them.

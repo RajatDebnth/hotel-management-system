@@ -44,4 +44,6 @@ Authorization is enforced in FastAPI using the authenticated profile loaded from
 
 ## Schema and seed lifecycle
 
-`backend/app/db/schema.py` owns versioned initialization and idempotent demo seeds. Startup applies supported upgrades, ensures catalog records and demo media exist, and creates the first local administrator only when needed. Step 24 adds explicit reset/export/import commands; direct manual edits to the database are not the normal workflow.
+`backend/app/db/schema.py` owns versioned initialization and idempotent demo seeds. Startup applies supported upgrades, ensures catalog records and demo media exist, logs the database path and administrator email, and creates the first local administrator only when needed.
+
+The scripts in `backend/scripts/` expose idempotent seed, confined reset, versioned JSON export/import, and booking CSV export workflows. Direct manual edits to the database are not the normal workflow.

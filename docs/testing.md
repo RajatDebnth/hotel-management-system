@@ -10,6 +10,8 @@ cd backend
 
 The pytest suite uses isolated temporary SQLite databases and upload directories. It covers schema upgrades and reseeding, foreign keys, integer money boundaries, concurrent/overlapping bookings, authentication and cookie flags, CSRF, customer/admin isolation, inventory, local media cleanup, operations, and reports.
 
+Maintenance tests additionally use disposable databases to prove JSON round trips, strict backup validation, transactional rejection, overwrite protection, confined reset/reseed, demo-media restoration, and booking CSV output. They never reset or import the live `backend/data/hms.db`.
+
 ## Frontend
 
 ```powershell
