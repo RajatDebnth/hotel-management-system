@@ -1,23 +1,36 @@
 # Hotel Management System
 
-A greenfield hotel room booking application built with Next.js, FastAPI, and Supabase.
+A local-first hotel room booking application built with Next.js and FastAPI. It runs without cloud accounts: SQLite stores application data, signed HttpOnly cookies provide authentication, and room images live on the local filesystem.
 
 ## Repository structure
 
-- `frontend/` - Next.js App Router, TypeScript, Tailwind CSS, and shadcn/ui
-- `backend/` - FastAPI, Pydantic, SQLAlchemy, Alembic, and pytest
-- `supabase/` - versioned database migrations and seed data (added in Step 2)
-- `docs/` - architecture and operating documentation
-- `BUILD_PLAN.md` - product and architecture plan
-- `CODEX_RUNBOOK.md` - ordered implementation tracker
+- `frontend/` — Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui, Vitest, and Playwright
+- `backend/` — FastAPI, Pydantic, async SQLAlchemy, SQLite, local media storage, Ruff, and pytest
+- `docs/` — architecture, API, data, testing, backup, and reporting documentation
+- `BUILD_PLAN.md` — current product scope and local architecture
+- `CODEX_RUNBOOK.md` — ordered implementation tracker
 
 ## Prerequisites
 
-- Node.js 20.9 or newer
-- npm 10 or newer
+- Node.js 20.9 or newer and npm 10 or newer
 - Python 3.12 or newer
 
-## Frontend
+No Docker, PostgreSQL, Supabase, Render, Vercel, or other hosted service is required.
+
+## Run the backend
+
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe scripts\dev_server.py
+```
+
+The API runs at <http://localhost:8000>; health is available at <http://localhost:8000/api/v1/health>. On the first startup, the server creates the database, seeds demo inventory, creates `admin@example.com`, and prints its one-time password. Change that password after signing in.
+
+## Run the frontend
+
+In a second terminal:
 
 ```powershell
 cd frontend
@@ -25,30 +38,27 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:3000>. Run all frontend checks with `npm run verify`.
+Open <http://localhost:3000>. The checked-in defaults already point the frontend at the local API; `.env.local` is optional for the standard ports.
 
-## Backend
+## Local data
+
+- Database: `backend/data/hms.db`
+- Uploaded room images: `backend/data/uploads/`
+- Session signing key: `backend/data/.session-key`
+
+The entire `backend/data/` directory is ignored by Git. Back up the database and uploads together while both services are stopped. See [backup and recovery](docs/backup-recovery.md).
+
+## Verification
 
 ```powershell
 cd backend
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -e ".[dev]"
-python scripts/dev_server.py
+.\.venv\Scripts\python.exe -m ruff check .
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm run verify
+npm run test:e2e
 ```
-
-Open <http://localhost:8000/api/v1/health>. Verify with `ruff check .` and `pytest`.
-
-## Environment configuration
-
-Copy the relevant `.env.example` file to its local `.env` variant. Environment files are ignored by Git. Never commit credentials, tokens, database passwords, or Supabase secret keys.
-
-For local authentication, configure Supabase Auth with a Site URL of `http://localhost:3000` and allow these redirects:
-
-- `http://localhost:3000/auth/callback`
-- `http://localhost:3000/reset-password`
-
-The frontend owns Supabase's cookie-based browser session. FastAPI independently verifies each bearer token against the project's JWKS endpoint and loads the user's current role from `public.profiles`; clients cannot grant themselves admin access.
 
 ## Documentation
 
@@ -56,7 +66,7 @@ The frontend owns Supabase's cookie-based browser session. FastAPI independently
 - [API](docs/api.md)
 - [Data model](docs/data-model.md)
 - [Report definitions](docs/reports.md)
-- [Testing and release checks](docs/testing.md)
-- [Production readiness](docs/production.md)
+- [Testing](docs/testing.md)
 - [Backup and recovery](docs/backup-recovery.md)
-- [Vercel + Render staging deployment](docs/staging-deployment.md)
+
+The previous hosted release is preserved in Git under the annotated `supabase-cloud-v1` tag.

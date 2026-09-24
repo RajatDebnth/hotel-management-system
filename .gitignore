@@ -25,10 +25,6 @@ htmlcov/
 *.egg-info/
 backend/data/
 
-# Supabase local state
-supabase/.branches/
-supabase/.temp/
-
 # Editors, OS, and scratch files
 .idea/
 .vscode/

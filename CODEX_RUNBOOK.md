@@ -13,12 +13,12 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 ## Current state
 
-- Current step: **Step 22 - Frontend local-session migration**
+- Current step: **Step 23 - Remove cloud runtime and deployment assets**
 - Status: **DONE**
-- Last completed step: **Step 22 - Frontend local-session migration**
-- Application state: The local application now uses SQLite, FastAPI cookie authentication, local filesystem media, and a Next.js frontend with credentialed cookie requests throughout. Customer registration, login/logout, profile, password change, booking, cancellation, and guards work locally. Administrator guards, reports, inventory, operations, and user-role controls work in the existing sidebar dashboard. No frontend or backend runtime Supabase dependency remains. Both local servers are running; the cloud release remains recoverable, and payment Steps 15 and 16 remain paused.
+- Last completed step: **Step 23 - Remove cloud runtime and deployment assets**
+- Application state: The active repository and runtime are local-only: Next.js, FastAPI, SQLite, signed cookie sessions, and local media. Retired Supabase migrations/configuration, hosted smoke scripts, Alembic stub, Render/Vercel workflows/configuration, cloud deployment documents, and ignored local cloud settings have been removed. Active build, architecture, API, data, testing, backup, and project-instruction documents now match the local system. Both local services are running and return `200`; the prior hosted release remains recoverable from the `supabase-cloud-v1` tag, and payment Steps 15 and 16 remain paused.
 - User action currently required: None. The implementation defaults in `docs/local-mode-plan.md` are approved project defaults unless the user requests a change before the relevant phase.
-- Next command: Say **"do next"** to implement **Step 23 - Remove cloud runtime and deployment assets**.
+- Next command: Say **"do next"** to implement **Step 24 - Local data tooling and startup workflow**.
 
 ## Standard execution contract
 
@@ -649,7 +649,7 @@ FRONTEND_URL=http://localhost:3000
 
 ## Step 23 - Remove cloud runtime and deployment assets
 
-**Status:** READY
+**Status:** DONE
 
 **Objective:** Remove Supabase, Render, Vercel, and cloud CI runtime dependencies after the local replacement paths pass.
 
@@ -657,7 +657,7 @@ FRONTEND_URL=http://localhost:3000
 
 ## Step 24 - Local data tooling and startup workflow
 
-**Status:** PENDING
+**Status:** READY
 
 **Objective:** Add reset/seed/backup scripts and simple cross-platform local startup commands.
 
@@ -693,6 +693,8 @@ FRONTEND_URL=http://localhost:3000
 - 2026-09-23: Began the local-only migration on `codex/local-sqlite-mode` while preserving cloud commit `b617082` on `main` and the annotated `supabase-cloud-v1` tag. Selected a versioned SQLite initializer, idempotent first-run seed, standard-library PBKDF2 password hashing, generated first-run `admin@example.com` password, authenticated password changes, retained local `/docs`, no committed database, no default LAN mode, and a deliberate port of the existing async raw-SQL data layer rather than an ORM rewrite.
 
 ## Completion log
+
+- 2026-09-24: Step 23 completed. Removed the Render Blueprint, Vercel/Render release and keep-warm workflows, eight hosted smoke scripts, the obsolete Alembic stub, hosted schema test, complete Supabase migrations/config/seed/local state, and cloud deployment/production documents. Removed retired cloud settings from the ignored backend environment without displaying their values. Rewrote the active build plan, project instructions, root/frontend READMEs, architecture, API, data-model, backup/recovery, and testing documents for the local SQLite/cookie/filesystem architecture; the hosted release remains recoverable through `supabase-cloud-v1`. Backend Ruff and all 51 active local tests passed; frontend lint, type checking, all eight tests, and production build passed. Restarted both local services from the cleaned tree; backend health, three-item catalog, and frontend returned `200`.
 
 - 2026-09-24: Step 22 completed. Replaced Supabase browser/server/proxy session clients and bearer-token plumbing with a shared local session-cookie contract, credentialed browser requests, server-side cookie forwarding, local registration/login/logout, authenticated password changes, and cookie-based account/admin/book guards. Removed callback/reset-email flows, frontend Supabase dependencies and environment variables, and added localhost API defaults. Added a local admin users screen with protected role changes, regenerated OpenAPI TypeScript contracts, and expanded Playwright coverage for anonymous guards, customer registration/profile/password/booking/cancellation, administrator role management, and all admin workspaces. Frontend lint, type checking, all eight unit tests, production build, and all ten desktop/mobile Playwright tests passed. Both local servers are running.
 

@@ -1,26 +1,25 @@
-# Backup and recovery
+# Local backup and recovery
 
-Supabase PostgreSQL is the system of record. Storage objects and Auth users must be considered alongside database backups.
+The local system of record is `backend/data/hms.db`. Room image bytes live in `backend/data/uploads/`, and the session signing key lives at `backend/data/.session-key`.
 
 ## Backup
 
-1. Confirm the intended Supabase project reference before any operation.
-2. Use the Supabase dashboard's managed backups/PITR for the subscribed plan and periodically export a logical database backup with the provider-supported `supabase db dump` workflow.
-3. Export Storage objects separately; the database stores paths, not image bytes.
-4. Keep backups encrypted, access-controlled, outside the application repository, and test restoration on a non-production project.
-5. Record the migration revision, backup timestamp, project reference, and Storage export timestamp together.
+1. Stop the frontend and backend so the database and uploads cannot change during the copy.
+2. Copy `backend/data/hms.db` and the complete `backend/data/uploads/` directory into the same dated backup set.
+3. Copy `backend/data/.session-key` only if existing browser sessions must survive restoration. Treat it as a secret.
+4. Store the backup outside the repository with restricted access. Never commit runtime data or real customer records.
+5. Record the application commit and backup timestamp beside the files.
 
-Never place database dumps, Auth exports, service-role keys, or customer data in Git.
+The SQLite database may use `-wal` and `-shm` sidecars while the backend is running. Stopping the backend before copying avoids an inconsistent manual backup.
 
-## Recovery drill
+## Recovery
 
-1. Create or select an empty, non-production Supabase project.
-2. Restore the logical backup using Supabase's documented restore process.
-3. Restore Storage objects to their original bucket paths.
-4. Apply only migrations newer than the recorded backup revision.
-5. configure new local/staging secrets and Auth redirect URLs; do not reuse production secrets unnecessarily.
-6. Run database/RLS checks and every hosted smoke script.
-7. Compare table counts, sample booking histories, Storage object availability, and report totals with the recorded backup evidence.
-8. Switch traffic only after customer/admin journeys pass. Preserve the failed environment for diagnosis rather than overwriting the last known-good backup.
+1. Stop both services.
+2. Preserve the failed `backend/data/` directory for diagnosis.
+3. Create a new `backend/data/` directory and restore `hms.db`, `uploads/`, and optionally `.session-key` from one matching backup set.
+4. Start FastAPI. Its versioned initializer validates/upgrades the database and repairs safe media state.
+5. Start Next.js and verify customer login, catalog media, booking history, administrator inventory, and reports.
 
-Schema roll-forward is preferred. If a migration must be reversed, restore into a new project from the last verified backup and validate it before changing application endpoints.
+If `.session-key` is not restored, FastAPI creates a new key and all previous browser sessions become invalid; users can sign in again. If no database is restored, startup creates a fresh seeded installation and a new administrator password.
+
+Automated export/import tooling is implemented in Step 24. Until then, the stopped-directory copy above is the supported backup method.

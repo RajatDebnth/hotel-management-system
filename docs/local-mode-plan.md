@@ -1,6 +1,6 @@
 # Local-only mode plan (SQLite + FastAPI)
 
-**Status:** Phases 0-4 complete on `codex/local-sqlite-mode`; Phase 5 is ready.
+**Status:** Phases 0-5 complete on `codex/local-sqlite-mode`; Phase 6 is ready.
 
 **Date:** 2026-09-23
 
@@ -505,6 +505,8 @@ the FastAPI contract, removed obsolete local Supabase variables, and verified th
 complete customer and administrator journeys at desktop and mobile sizes.
 
 ## 12. Phase 5 - Remove hosting and cloud assets
+
+**Status:** complete on 2026-09-24.
 
 Delete:
 

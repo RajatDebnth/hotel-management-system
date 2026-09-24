@@ -1,62 +1,47 @@
-# Data model
+# Local data model
 
 ## Conventions
 
-- UUID primary keys avoid exposing sequential identifiers.
-- `timestamptz` stores audit times; hotel stay boundaries use PostgreSQL `date` values.
-- Monetary values use `numeric(12,2)`.
-- Mutable records carry `created_at` and `updated_at`.
-- Database constraints enforce invariants in addition to FastAPI validation.
+- SQLite text UUIDs are used as public identifiers.
+- ISO date strings represent hotel stay boundaries; timestamps use SQLite UTC `current_timestamp` values.
+- Monetary values are stored as integer paise and converted to exact `Decimal` values at the API boundary.
+- Foreign keys are enabled for every connection. Mutable records carry `created_at` and `updated_at`.
+- `PRAGMA user_version` tracks the local schema version.
 
 ## Relationships
 
 ```text
-auth.users 1---1 profiles 1---* bookings *---1 rooms *---1 room_categories
-                                      |
-                                      +---* booking_status_history
+profiles 1---* bookings *---1 rooms *---1 room_categories
+    |                 |
+    |                 +---* booking_status_history
+    +---* enquiries
+    +---* assigned enquiries
 
-room_categories *---* facilities (through room_category_facilities)
+room_categories *---* facilities (room_category_facilities)
 rooms/categories 1---* room_images
-profiles 0---* enquiries
-profiles 0---* assigned enquiries
 ```
 
 ## Tables
 
-- `profiles`: application identity, contact details, activation state, and trusted role linked to Supabase Auth.
-- `room_categories`: public product information, capacity, bed type, size, and base nightly price.
+- `profiles`: local email/password identity, contact details, trusted role, and activation state.
+- `room_categories`: public room product, capacity, bed, size, and base nightly price.
 - `rooms`: individually reservable physical inventory.
-- `facilities`: reusable amenities attached to categories through a join table.
-- `room_images`: storage object paths and presentation metadata belonging to exactly one room or category.
-- `bookings`: reservation dates, guest details, immutable price snapshot, lifecycle status, and cancellation data.
-- `booking_status_history`: append-only audit trail for reservation transitions.
-- `enquiries`: public or authenticated customer messages and administrator workflow state.
+- `facilities`: reusable amenities joined to categories.
+- `room_images`: confined local paths and presentation metadata owned by one room or category.
+- `bookings`: dates, assigned room, guest details, immutable price snapshot, status, and cancellation data.
+- `booking_status_history`: audit trail for booking lifecycle changes.
+- `enquiries`: public/customer messages plus administrator workflow fields.
 
 ## Double-booking protection
 
-The `bookings_no_overlapping_active_dates` GiST exclusion constraint rejects intersecting half-open date ranges (`[check_in, check_out)`) for the same room while either booking is `pending`, `confirmed`, or `checked_in`. This permits a new guest to check in on the prior guest's checkout date and prevents race conditions that an application-only availability check cannot stop.
+Booking dates use half-open ranges: `[check_in, check_out)`. Pending, confirmed, and checked-in reservations block the same room; cancelled, rejected, and checked-out records do not. This permits back-to-back stays where one checkout equals the next check-in.
 
-FastAPI must still perform a friendly availability check before insertion, then translate a database exclusion violation into a domain-level conflict response.
+FastAPI checks availability and assigns a physical room inside a serialized `BEGIN IMMEDIATE` transaction. SQLite insert/update triggers independently reject overlapping active bookings, so concurrent requests cannot bypass the rule.
 
-## Authorization model
+## Authorization
 
-- Public roles can read active catalog records.
-- Authenticated customers can read/update permitted fields of their own profile.
-- Customers can read only their own bookings. Booking creation and cancellation are routed through FastAPI so clients cannot forge prices or lifecycle states.
-- Public and authenticated visitors can submit enquiries, while authenticated users can read their own.
-- Administrator policies use `is_admin()`, a restricted security-definer function that avoids recursive profile policies.
-- Column-level grants prevent customers from updating trusted profile fields such as `role` and `is_active`.
-- Column-level grants let public users submit only enquiry input fields; workflow state and administrator notes cannot be forged.
-- Privileged FastAPI operations use backend-only credentials and still enforce application authorization.
+Authorization is enforced in FastAPI using the authenticated profile loaded from SQLite. Customers can access only their own profile and bookings. Administrators receive separate inventory, operations, reporting, and role-management permissions. Role, price, room assignment, and lifecycle state are never trusted from browser identity claims.
 
-## Migration workflow
+## Schema and seed lifecycle
 
-After Docker Desktop is installed and running:
-
-```powershell
-npx supabase start
-npx supabase db reset
-npx supabase test db
-```
-
-`db reset` recreates the local database, applies migrations in order, and then applies `seed.sql`. Never use development seed data in production.
+`backend/app/db/schema.py` owns versioned initialization and idempotent demo seeds. Startup applies supported upgrades, ensures catalog records and demo media exist, and creates the first local administrator only when needed. Step 24 adds explicit reset/export/import commands; direct manual edits to the database are not the normal workflow.
