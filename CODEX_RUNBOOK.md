@@ -13,12 +13,12 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 ## Current state
 
-- Current step: **Step 24 - Local data tooling and startup workflow**
+- Current step: **Step 25 - Local release verification and packaging**
 - Status: **DONE**
-- Last completed step: **Step 24 - Local data tooling and startup workflow**
-- Application state: The local-only application now includes idempotent seed, confined rollback-safe reset, versioned atomic JSON export, strictly validated transactional import, sensitive booking CSV export, startup database/admin logging, and a cross-platform `python start_local.py` launcher that manages both services. Maintenance commands require explicit confirmation for destructive work and refuse reset/import while FastAPI is running. Both services are currently running and return `200`; payment Steps 15 and 16 remain paused.
-- User action currently required: None. The implementation defaults in `docs/local-mode-plan.md` are approved project defaults unless the user requests a change before the relevant phase.
-- Next command: Say **"do next"** to implement **Step 25 - Local release verification and packaging**.
+- Last completed step: **Step 25 - Local release verification and packaging**
+- Application state: The local-only migration is complete. The application has a clean source-archive builder, an operator guide, complete backend/frontend/browser verification, a production dependency audit with no findings, and a successful clean-directory install/start handoff. Payment Steps 15 and 16 remain paused.
+- User action currently required: None.
+- Next command: There is no active `READY` implementation step. Explicitly resume Step 15 or Step 16 when payment work should begin.
 
 ## Standard execution contract
 
@@ -665,7 +665,7 @@ FRONTEND_URL=http://localhost:3000
 
 ## Step 25 - Local release verification and packaging
 
-**Status:** READY
+**Status:** DONE
 
 **Objective:** Complete offline E2E/security tests, rewrite documentation, and verify a clean zip-and-run handoff.
 
@@ -693,6 +693,8 @@ FRONTEND_URL=http://localhost:3000
 - 2026-09-23: Began the local-only migration on `codex/local-sqlite-mode` while preserving cloud commit `b617082` on `main` and the annotated `supabase-cloud-v1` tag. Selected a versioned SQLite initializer, idempotent first-run seed, standard-library PBKDF2 password hashing, generated first-run `admin@example.com` password, authenticated password changes, retained local `/docs`, no committed database, no default LAN mode, and a deliberate port of the existing async raw-SQL data layer rather than an ORM rewrite.
 
 ## Completion log
+
+- 2026-09-25: Step 25 completed. Added a clean-tree `git archive` release builder with required-file and forbidden-runtime validation, a complete local operator guide, ZIP/share instructions, and stronger Playwright navigation/mutation synchronization. Backend Ruff and all 56 tests passed; frontend lint, type checking, all eight unit tests, production build, and all ten desktop/mobile Playwright journeys passed. Production npm dependencies reported zero vulnerabilities; the two remaining moderate advisories are confined to the Vitest 3 development-only mocker, while its patched major currently breaks the documented Node 20/npm 10 reproducible lock workflow. Built a 165-file source archive, confirmed it contains no environment files, dependencies, caches, database, uploads, session key, or logs, extracted it to a separate clean path, installed both dependency sets from the documented manifests, and started it without configuration. The extracted copy generated a new one-time administrator credential, created and seeded SQLite, returned backend health plus three catalog entries, and served the frontend with `200`.
 
 - 2026-09-24: Step 24 completed. Added an idempotent seed command, reset confined to `backend/data` with staged rollback and explicit `--yes`, versioned/atomic all-table JSON export, exact-format/schema/table/column validation with transactional import, and a booking/report CSV export. Sensitive exports default to ignored storage and refuse overwrite; reset/import refuse to run while FastAPI is live. Added startup database-path/administrator logging and a cross-platform root `start_local.py` launcher with prerequisite checks and managed child-process shutdown. Added five disposable maintenance tests covering round trips, tamper rejection without data loss, overwrite refusal, reset confinement/reseed/media restoration, and CSV content. Exercised all five CLI workflows against a disposable installation and removed its generated database, media, password, JSON, and CSV afterward. Backend Ruff and all 56 tests passed; frontend lint, type checking, all eight tests, and production build passed. The combined launcher started both services, and backend/frontend returned `200`.
 

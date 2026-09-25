@@ -1,6 +1,6 @@
 # Local-only mode plan (SQLite + FastAPI)
 
-**Status:** Phases 0-6 complete on `codex/local-sqlite-mode`; Phase 7 is ready.
+**Status:** Phases 0-7 complete on `codex/local-sqlite-mode`.
 
 **Date:** 2026-09-23
 
@@ -584,7 +584,7 @@ The seed must be safe to run repeatedly without creating duplicates.
 
 ## 14. Phase 7 - Tests and documentation
 
-**Status:** ready.
+**Status:** complete.
 
 ### 14.1 Backend tests
 
