@@ -13,10 +13,10 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 ## Current state
 
-- Current step: **Step 25 - Local release verification and packaging**
+- Current step: **Step 26 - Local administrator password recovery**
 - Status: **DONE**
-- Last completed step: **Step 25 - Local release verification and packaging**
-- Application state: The local-only migration is complete. The application has a clean source-archive builder, an operator guide, complete backend/frontend/browser verification, a production dependency audit with no findings, and a successful clean-directory install/start handoff. Payment Steps 15 and 16 remain paused.
+- Last completed step: **Step 26 - Local administrator password recovery**
+- Application state: The local-only application now includes a non-destructive, stopped-backend administrator password-reset command that preserves hotel data and invalidates existing sessions. Both local services remain running; payment Steps 15 and 16 remain paused.
 - User action currently required: None.
 - Next command: There is no active `READY` implementation step. Explicitly resume Step 15 or Step 16 when payment work should begin.
 
@@ -671,6 +671,28 @@ FRONTEND_URL=http://localhost:3000
 
 ---
 
+## Step 26 - Local administrator password recovery
+
+**Status:** DONE
+
+**Objective:** Provide a safe local-owner recovery path when the generated built-in administrator password is unavailable.
+
+**Work:**
+
+- Add an explicit-confirmation CLI that resets only `admin@example.com`.
+- Refuse the operation while FastAPI is running and when the built-in account is missing, inactive, or not an administrator.
+- Generate the credential locally, preserve all application data, and rotate the session signing key.
+- Document the stopped-backend recovery workflow without storing or exposing the generated password.
+
+**Acceptance checks:**
+
+- Existing users, bookings, inventory, enquiries, and uploads remain unchanged.
+- The previous administrator password is rejected and the generated password verifies.
+- Every existing signed session is invalidated.
+- Backend Ruff and all tests pass, and a disposable CLI smoke test succeeds without retaining its credential or data.
+
+---
+
 ## Decision log
 
 - 2026-09-06: Next.js handles the UI and Supabase SSR session lifecycle.
@@ -693,6 +715,8 @@ FRONTEND_URL=http://localhost:3000
 - 2026-09-23: Began the local-only migration on `codex/local-sqlite-mode` while preserving cloud commit `b617082` on `main` and the annotated `supabase-cloud-v1` tag. Selected a versioned SQLite initializer, idempotent first-run seed, standard-library PBKDF2 password hashing, generated first-run `admin@example.com` password, authenticated password changes, retained local `/docs`, no committed database, no default LAN mode, and a deliberate port of the existing async raw-SQL data layer rather than an ORM rewrite.
 
 ## Completion log
+
+- 2026-09-25: Step 26 completed. Added `reset_admin_password.py`, which requires `--yes`, refuses to run while the local API is live, targets only the active built-in `admin@example.com` administrator, generates a new password locally, preserves the complete SQLite dataset and uploads, and rotates the session-signing key to invalidate all existing cookies. Added recovery documentation and a focused regression proving the old password fails, the new hash verifies, application rows remain intact, unsafe administrator state is rejected, and the signing key changes. Backend Ruff and all 57 tests passed. A disposable end-to-end CLI smoke test verified the generated credential, seeded catalog, and session key, then removed its database, media, key, and password from memory; the live-database refusal check also passed.
 
 - 2026-09-25: Step 25 completed. Added a clean-tree `git archive` release builder with required-file and forbidden-runtime validation, a complete local operator guide, ZIP/share instructions, and stronger Playwright navigation/mutation synchronization. Backend Ruff and all 56 tests passed; frontend lint, type checking, all eight unit tests, production build, and all ten desktop/mobile Playwright journeys passed. Production npm dependencies reported zero vulnerabilities; the two remaining moderate advisories are confined to the Vitest 3 development-only mocker, while its patched major currently breaks the documented Node 20/npm 10 reproducible lock workflow. Built a 165-file source archive, confirmed it contains no environment files, dependencies, caches, database, uploads, session key, or logs, extracted it to a separate clean path, installed both dependency sets from the documented manifests, and started it without configuration. The extracted copy generated a new one-time administrator credential, created and seeded SQLite, returned backend health plus three catalog entries, and served the frontend with `200`.
 

@@ -10,4 +10,4 @@ def refuse_if_backend_running(api_url: str) -> None:
         return
     with response:
         if response.status == 200:
-            raise SystemExit("Stop the local backend before reset or import.")
+            raise SystemExit("Stop the local backend before running this maintenance command.")

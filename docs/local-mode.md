@@ -63,12 +63,16 @@ Stop the application before replacing or resetting data. From `backend/`:
 ```powershell
 .\.venv\Scripts\python.exe scripts\export_db.py
 .\.venv\Scripts\python.exe scripts\export_bookings.py
+.\.venv\Scripts\python.exe scripts\reset_admin_password.py --yes
 .\.venv\Scripts\python.exe scripts\import_db.py <backup.json> --yes
 .\.venv\Scripts\python.exe scripts\reset_db.py --yes
 .\.venv\Scripts\python.exe scripts\seed_db.py
 ```
 
 Database exports contain account and booking information, so store them privately.
+The administrator-password reset changes only the built-in `admin@example.com`
+password and the session-signing key. It preserves hotel data, signs out every
+existing browser session, and prints the new password only in the local terminal.
 The JSON export does not include uploaded image bytes; for a complete backup, copy
 the database and `uploads/` together while the application is stopped. See
 [backup and recovery](backup-recovery.md) for the full procedure.

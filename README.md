@@ -62,6 +62,7 @@ Run these from `backend/`. Stop the backend before reset or import.
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\seed_db.py
+.\.venv\Scripts\python.exe scripts\reset_admin_password.py --yes
 .\.venv\Scripts\python.exe scripts\export_db.py
 .\.venv\Scripts\python.exe scripts\export_bookings.py
 .\.venv\Scripts\python.exe scripts\import_db.py <backup.json> --yes
@@ -69,6 +70,11 @@ Run these from `backend/`. Stop the backend before reset or import.
 ```
 
 Reset deletes the local database and uploaded media. Import replaces all table data but does not contain image bytes. Both destructive commands require `--yes`; create a backup first.
+
+The administrator-password reset preserves users, bookings, inventory, enquiries,
+and uploads. It generates a new password for `admin@example.com` and invalidates all
+existing login sessions. Stop the backend before running it, then use the password
+printed only in that terminal and change it after signing in.
 
 ## Verification
 

@@ -109,7 +109,9 @@ Booking ranges are half-open `[check_in, check_out)`. Pending, confirmed, and ch
 - The signing key is generated into ignored local storage.
 - Customer endpoints enforce ownership. Administrator endpoints enforce the database role.
 - Administrator self-demotion and removal of the final administrator are prohibited.
-- Password changes require the current password; email delivery/reset is intentionally unavailable offline.
+- Password changes require the current password; email delivery is intentionally unavailable offline.
+- A stopped-backend owner command can reset only the built-in administrator password,
+  rotate the session key, and preserve all hotel data.
 
 ## 7. Media storage
 
@@ -149,5 +151,6 @@ Security-sensitive work reviews cookie/session handling, authorization, origin c
 `CODEX_RUNBOOK.md` is the execution tracker.
 
 - Steps 23 and 24 completed hosted-asset retirement, local documentation, data tooling, and the two-service launcher.
-- Step 25 completes offline release/security verification and zip-and-run packaging.
+- Step 25 completed offline release/security verification and zip-and-run packaging.
+- Step 26 added non-destructive local administrator credential recovery.
 - Payment Steps 15 and 16 remain paused until the user explicitly resumes them.

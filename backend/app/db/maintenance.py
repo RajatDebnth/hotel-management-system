@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import secrets
 import shutil
 from collections.abc import Mapping, Sequence
 from contextlib import suppress
@@ -11,6 +12,7 @@ from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from app.core.passwords import hash_password
 from app.db.schema import SCHEMA_VERSION, InitialAdminCredential, initialize_database
 from app.db.session import build_engine
 
@@ -49,6 +51,10 @@ BOOKING_EXPORT_COLUMNS = (
 
 
 class InvalidBackupError(ValueError):
+    pass
+
+
+class AdminPasswordResetError(ValueError):
     pass
 
 
@@ -103,6 +109,37 @@ def load_backup(path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise InvalidBackupError("Backup root must be an object")
     return payload
+
+
+async def reset_builtin_admin_password(
+    engine: AsyncEngine,
+    *,
+    password: str | None = None,
+) -> InitialAdminCredential:
+    new_password = password or secrets.token_urlsafe(18)
+    async with engine.begin() as connection:
+        administrator = (
+            await connection.exec_driver_sql(
+                """select id, role, is_active from profiles
+                where lower(email) = 'admin@example.com'"""
+            )
+        ).mappings().one_or_none()
+        if administrator is None:
+            raise AdminPasswordResetError("The built-in administrator does not exist")
+        if administrator["role"] != "admin" or not administrator["is_active"]:
+            raise AdminPasswordResetError(
+                "The built-in administrator must be an active administrator"
+            )
+        await connection.exec_driver_sql(
+            """update profiles set password_hash = ?, updated_at = current_timestamp
+            where id = ?""",
+            (hash_password(new_password), administrator["id"]),
+        )
+    return InitialAdminCredential("admin@example.com", new_password)
+
+
+def rotate_session_signing_key(path: Path) -> None:
+    _atomic_text_write(path, secrets.token_urlsafe(48), overwrite=True)
 
 
 async def _table_columns(engine: AsyncEngine) -> dict[str, tuple[str, ...]]:

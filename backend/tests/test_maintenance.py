@@ -4,16 +4,20 @@ from pathlib import Path
 import pytest
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from app.core.passwords import verify_password
 from app.db.maintenance import (
     EXPORT_FORMAT,
     TABLES,
+    AdminPasswordResetError,
     InvalidBackupError,
     ensure_runtime_targets,
     export_bookings_csv,
     export_database,
     import_database,
     load_backup,
+    reset_builtin_admin_password,
     reset_database,
+    rotate_session_signing_key,
 )
 from app.db.schema import SCHEMA_VERSION, initialize_database
 from app.db.session import build_engine
@@ -159,6 +163,49 @@ def test_backup_loader_rejects_invalid_json(tmp_path: Path) -> None:
     invalid.write_text("not-json", encoding="utf-8")
     with pytest.raises(InvalidBackupError, match="Could not read backup"):
         load_backup(invalid)
+
+
+@pytest.mark.asyncio
+async def test_admin_password_reset_preserves_data_and_rotates_sessions(tmp_path: Path) -> None:
+    database = tmp_path / "data" / "hms.db"
+    engine = build_engine(database)
+    await initialize_database(
+        engine,
+        admin_password="OldAdministrator!23",
+        uploads_dir=tmp_path / "data" / "uploads",
+    )
+    await add_customer_booking(engine)
+
+    credential = await reset_builtin_admin_password(
+        engine,
+        password="NewAdministrator!45",
+    )
+    async with engine.connect() as connection:
+        admin_hash = (
+            await connection.exec_driver_sql(
+                "select password_hash from profiles where email = 'admin@example.com'"
+            )
+        ).scalar_one()
+        assert (await connection.exec_driver_sql("select count(*) from bookings")).scalar_one() == 1
+        assert (await connection.exec_driver_sql("select count(*) from profiles")).scalar_one() == 2
+    assert credential.email == "admin@example.com"
+    assert verify_password("NewAdministrator!45", admin_hash)
+    assert not verify_password("OldAdministrator!23", admin_hash)
+
+    session_key = tmp_path / "data" / ".session-key"
+    session_key.write_text("old-session-key-that-is-long-enough-to-use", encoding="utf-8")
+    rotate_session_signing_key(session_key)
+    rotated = session_key.read_text(encoding="utf-8")
+    assert rotated != "old-session-key-that-is-long-enough-to-use"
+    assert len(rotated) >= 32
+
+    async with engine.begin() as connection:
+        await connection.exec_driver_sql(
+            "update profiles set role = 'customer' where email = 'admin@example.com'"
+        )
+    with pytest.raises(AdminPasswordResetError, match="active administrator"):
+        await reset_builtin_admin_password(engine, password="RejectedPassword!45")
+    await engine.dispose()
 
 
 @pytest.mark.asyncio
