@@ -13,10 +13,10 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 ## Current state
 
-- Current step: **Step 26 - Local administrator password recovery**
+- Current step: **Step 27 - Realistic full-system acceptance dataset**
 - Status: **DONE**
-- Last completed step: **Step 26 - Local administrator password recovery**
-- Application state: The local-only application now includes a non-destructive, stopped-backend administrator password-reset command that preserves hotel data and invalidates existing sessions. Both local services remain running; payment Steps 15 and 16 remain paused.
+- Last completed step: **Step 27 - Realistic full-system acceptance dataset**
+- Application state: The local application contains the preserved built-in administrator, 20 named customers, representative bookings across every lifecycle state, realistic enquiry work, and restored hotel inventory/media. Full API, backend, frontend, and desktop/mobile browser acceptance checks pass; payment Steps 15 and 16 remain paused.
 - User action currently required: None.
 - Next command: There is no active `READY` implementation step. Explicitly resume Step 15 or Step 16 when payment work should begin.
 
@@ -693,6 +693,37 @@ FRONTEND_URL=http://localhost:3000
 
 ---
 
+## Step 27 - Realistic full-system acceptance dataset
+
+**Status:** DONE
+
+**Objective:** Replace disposable local records with a repeatable realistic hotel
+acceptance dataset and verify every implemented public, customer, and administrator
+workflow without deleting the built-in administrator identity.
+
+**Work:**
+
+- Add an explicit-confirmation, stopped-backend loader that preserves the built-in
+  administrator ID, replaces all other application data, restores media, and generates
+  fresh local credentials.
+- Seed 20 named customers, 20 bookings covering all lifecycle states and histories,
+  realistic inventory, and 12 actionable hotel enquiries.
+- Add an isolated dataset regression and a live API verifier covering public access,
+  authentication, authorization, customer workflows, users/roles, inventory/media,
+  booking/enquiry operations, dashboards, and reports.
+- Use realistic identities and operational language in desktop/mobile browser journeys.
+
+**Acceptance checks:**
+
+- The original live data has a protected ignored backup before replacement.
+- The built-in administrator identity remains and exactly 20 realistic customers exist.
+- Backend Ruff and pytest, frontend verification/build, the live API suite, and all
+  desktop/mobile Playwright journeys pass.
+- Temporary accounts and mutations from verification are removed by a final clean load;
+  runtime credentials remain ignored and are handed to the local owner only.
+
+---
+
 ## Decision log
 
 - 2026-09-06: Next.js handles the UI and Supabase SSR session lifecycle.
@@ -713,8 +744,11 @@ FRONTEND_URL=http://localhost:3000
 - 2026-09-08: Staging uses Vercel for `frontend/`, a Render Blueprint for `backend/`, and hosted Supabase. A GitHub Actions health request runs every 10 minutes for free-tier staging convenience; it is not an uptime guarantee and a paid Render instance remains the production recommendation.
 - 2026-09-08: At the user's request, recorded two separate paused payment milestones: Step 15 for manual administrator-verified QR/cash payments and Step 16 for later automated payment-gateway integration. Neither step may begin until the user explicitly resumes it.
 - 2026-09-23: Began the local-only migration on `codex/local-sqlite-mode` while preserving cloud commit `b617082` on `main` and the annotated `supabase-cloud-v1` tag. Selected a versioned SQLite initializer, idempotent first-run seed, standard-library PBKDF2 password hashing, generated first-run `admin@example.com` password, authenticated password changes, retained local `/docs`, no committed database, no default LAN mode, and a deliberate port of the existing async raw-SQL data layer rather than an ORM rewrite.
+- 2026-09-25: Realistic acceptance records use fictional contact details under `example.com`; generated passwords and the mutable SQLite dataset remain local and ignored.
 
 ## Completion log
+
+- 2026-09-25: Step 27 completed. Backed up the prior live dataset to ignored local storage, preserved the built-in administrator identity, and replaced all other records with 20 named fictional customers, 20 representative bookings covering pending, confirmed, checked-in, checked-out, cancelled, and rejected states, 38 audit-history entries, 12 realistic administrative enquiries, eight rooms, six facilities, and restored media. Added a transactional stopped-backend loader, rollback-aware upload replacement, focused dataset regression, and a live acceptance verifier covering public catalog/availability, customer authentication/profile/bookings/cancellation/enquiries, authorization boundaries, administrator users/roles, complete inventory/media CRUD, operations, dashboard, reports, and logout. Backend Ruff and all 58 tests passed; frontend lint, types, all eight tests, and production build passed; all 42 live API checks and all ten desktop/mobile Playwright journeys passed. Temporary browser accounts and acceptance mutations were removed by a final clean reload, and new runtime credentials were retained only for secure local handoff.
 
 - 2026-09-25: Step 26 completed. Added `reset_admin_password.py`, which requires `--yes`, refuses to run while the local API is live, targets only the active built-in `admin@example.com` administrator, generates a new password locally, preserves the complete SQLite dataset and uploads, and rotates the session-signing key to invalidate all existing cookies. Added recovery documentation and a focused regression proving the old password fails, the new hash verifies, application rows remain intact, unsafe administrator state is rejected, and the signing key changes. Backend Ruff and all 57 tests passed. A disposable end-to-end CLI smoke test verified the generated credential, seeded catalog, and session key, then removed its database, media, key, and password from memory; the live-database refusal check also passed.
 

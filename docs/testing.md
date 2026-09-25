@@ -12,6 +12,12 @@ The pytest suite uses isolated temporary SQLite databases and upload directories
 
 Maintenance tests additionally use disposable databases to prove JSON round trips, strict backup validation, transactional rejection, overwrite protection, confined reset/reseed, demo-media restoration, and booking CSV output. They never reset or import the live `backend/data/hms.db`.
 
+The realistic acceptance-data regression verifies a stopped-backend replacement that
+preserves the built-in administrator identity and creates exactly 20 named customers,
+20 bookings spanning every lifecycle status, complete booking histories, 12 realistic
+administrative enquiries, and restored demo media. Runtime credentials are generated
+locally and are never stored in source control.
+
 ## Frontend
 
 ```powershell
@@ -28,6 +34,14 @@ npm run test:e2e
 ```
 
 Playwright checks desktop and mobile public navigation, anonymous guards, local registration/login/logout, profile and password changes, booking and cancellation, administrator role management, and the admin overview/inventory/operations workspaces. Set `E2E_ADMIN_PASSWORD` to the current local administrator password to include the administrator journey.
+
+For a destructive full-system API acceptance pass against the realistic dataset, stop
+the backend, create a protected backup, run `scripts/load_realistic_demo.py --yes`,
+restart both services, and then run `scripts/verify_realistic_demo.py` with
+`REALISTIC_ADMIN_PASSWORD` and `REALISTIC_CUSTOMER_PASSWORD` supplied only as process
+environment variables. The verifier covers public catalog and availability, customer
+profile/bookings/cancellation/enquiries, authorization boundaries, administrator users,
+roles, inventory, media, operations, dashboard, reports, and logout.
 
 ## Manual security review
 

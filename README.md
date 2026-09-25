@@ -63,6 +63,7 @@ Run these from `backend/`. Stop the backend before reset or import.
 ```powershell
 .\.venv\Scripts\python.exe scripts\seed_db.py
 .\.venv\Scripts\python.exe scripts\reset_admin_password.py --yes
+.\.venv\Scripts\python.exe scripts\load_realistic_demo.py --yes
 .\.venv\Scripts\python.exe scripts\export_db.py
 .\.venv\Scripts\python.exe scripts\export_bookings.py
 .\.venv\Scripts\python.exe scripts\import_db.py <backup.json> --yes
@@ -75,6 +76,12 @@ The administrator-password reset preserves users, bookings, inventory, enquiries
 and uploads. It generates a new password for `admin@example.com` and invalidates all
 existing login sessions. Stop the backend before running it, then use the password
 printed only in that terminal and change it after signing in.
+
+The realistic-demo loader is a destructive acceptance-data reset. It preserves the
+built-in administrator identity, replaces every other application record, restores
+demo media, and creates 20 named customers with representative bookings and hotel
+enquiries. It generates fresh administrator and featured-customer passwords locally;
+protect that terminal output and never commit it.
 
 ## Verification
 

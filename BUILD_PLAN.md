@@ -153,4 +153,6 @@ Security-sensitive work reviews cookie/session handling, authorization, origin c
 - Steps 23 and 24 completed hosted-asset retirement, local documentation, data tooling, and the two-service launcher.
 - Step 25 completed offline release/security verification and zip-and-run packaging.
 - Step 26 added non-destructive local administrator credential recovery.
+- Step 27 added a destructive, repeatable 20-customer realistic acceptance dataset and
+  full live API/browser verification workflow while preserving the built-in administrator.
 - Payment Steps 15 and 16 remain paused until the user explicitly resumes them.

@@ -33,18 +33,18 @@ test("login form is keyboard-addressable and labelled", async ({ page }) => {
 
 test("customer can register, change password, sign out, and sign back in", async ({ page }) => {
   test.setTimeout(120_000);
-  const email = `customer-${Date.now()}-${test.info().project.name}@example.com`;
+  const email = `aarav.desai.${Date.now()}.${test.info().project.name}@example.com`;
   const initialPassword = "LocalCustomer!234";
   const changedPassword = "ChangedCustomer!567";
 
   await page.goto("/register");
-  await page.getByLabel("Full name").fill("Local Test Customer");
+  await page.getByLabel("Full name").fill("Aarav Desai");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(initialPassword);
   await page.getByLabel("Confirm password").fill(initialPassword);
   await page.getByRole("button", { name: /create account/i }).click();
   await expect(page).toHaveURL(/\/account$/, { timeout: 45_000 });
-  await expect(page.getByRole("heading", { name: /welcome, local test customer/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /welcome, aarav desai/i })).toBeVisible();
 
   await page.getByLabel("Phone").fill("9876543210");
   await page.getByRole("button", { name: /save profile/i }).click();
@@ -71,14 +71,16 @@ test("customer can register, change password, sign out, and sign back in", async
   await page.goto(`/book/${roomSlug}`);
   await page.getByLabel("Check-in").fill(checkIn.toISOString().slice(0, 10));
   await page.getByLabel("Check-out").fill(checkOut.toISOString().slice(0, 10));
-  await page.getByLabel("Guest name").fill("Local Test Customer");
+  await page.getByLabel("Guest name").fill("Aarav Desai");
   await page.getByLabel("Phone").fill("9876543210");
   await page.getByRole("button", { name: /request reservation/i }).click();
   await expect(page.getByRole("heading", { name: /pending confirmation/i })).toBeVisible();
   await page.getByRole("link", { name: /go to my account/i }).click();
   await page.locator('a[href^="/account/bookings/"]').first().click();
   await page.getByRole("button", { name: /cancel booking/i }).click();
-  await page.getByLabel("Why are you cancelling?").fill("Local browser verification");
+  await page
+    .getByLabel("Why are you cancelling?")
+    .fill("Travel itinerary changed after the airline rescheduled the return flight.");
   await page.getByRole("button", { name: /confirm cancellation/i }).click();
   await expect(page.getByText("cancelled", { exact: true })).toBeVisible({ timeout: 45_000 });
 
@@ -90,10 +92,10 @@ test("administrator can manage local user roles", async ({ page }) => {
   test.setTimeout(120_000);
   const adminPassword = process.env.E2E_ADMIN_PASSWORD;
   test.skip(!adminPassword, "Set E2E_ADMIN_PASSWORD to run the local administrator journey.");
-  const customerEmail = `role-test-${Date.now()}@example.com`;
+  const customerEmail = `neha.kapoor.${Date.now()}@example.com`;
 
   await page.goto("/register");
-  await page.getByLabel("Full name").fill("Role Test Customer");
+  await page.getByLabel("Full name").fill("Neha Kapoor");
   await page.getByLabel("Email").fill(customerEmail);
   await page.getByLabel("Password", { exact: true }).fill("RoleCustomer!234");
   await page.getByLabel("Confirm password").fill("RoleCustomer!234");
