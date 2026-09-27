@@ -49,8 +49,8 @@
 }
 
 :root {
-  --background: #f6f2e9;
-  --foreground: #17352d;
+  --background: #f8f7f3;
+  --foreground: #132a46;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -85,6 +85,7 @@
 
 @layer utilities {
   .site-container { @apply mx-auto w-full max-w-[1240px] px-5 sm:px-8 lg:px-10; }
+  .site-anchor { scroll-margin-top: 4.5rem; }
   .font-heading { font-family: var(--font-heading); }
   .eyebrow { @apply text-xs font-bold tracking-[0.22em] uppercase; }
   .hero-texture {

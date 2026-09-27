@@ -5,7 +5,18 @@ test("public journey has no horizontal overflow and exposes core navigation", as
 
   await expect(page).toHaveTitle(/Aurelia House/);
   await expect(page.getByRole("main")).toBeVisible();
-  await expect(page.getByRole("link", { name: /rooms/i }).first()).toBeVisible();
+  const mainNavigation = page.getByRole("navigation", { name: "Main navigation" });
+  const desktopNavigationVisible = await mainNavigation.isVisible();
+  if (!desktopNavigationVisible) await page.locator("summary[aria-label='Open navigation']").click();
+  const navigation = desktopNavigationVisible
+    ? mainNavigation
+    : page.getByRole("navigation", { name: "Mobile navigation" });
+  await expect(navigation.getByRole("link", { name: "Home", exact: true })).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "Gallery", exact: true })).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "Contact", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Book Your Stay", exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: /a closer look at the house/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /let.s make your stay feel easy/i })).toBeVisible();
   const hasOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
   );

@@ -33,7 +33,7 @@ With FastAPI on port 8000 and Next.js on port 3000:
 npm run test:e2e
 ```
 
-Playwright checks desktop and mobile public navigation, anonymous guards, local registration/login/logout, role-aware landing pages, profile and password changes, booking and cancellation, customer/admin cross-role denial, logout browser-Back protection, administrator role management, and the admin overview/inventory/operations/security workspaces. Set `E2E_ADMIN_PASSWORD` to the current local administrator password to include the administrator journey.
+Playwright checks the five-choice landing navigation and its Home/Gallery/Contact sections at desktop and mobile sizes, responsive overflow, anonymous guards, local registration/login/logout, role-aware landing pages, profile and password changes, booking and cancellation, customer/admin cross-role denial, logout browser-Back protection, administrator role management, and the admin overview/inventory/operations/security workspaces. Set `E2E_ADMIN_PASSWORD` to the current local administrator password to include the administrator journey.
 
 For a destructive full-system API acceptance pass against the realistic dataset, stop
 the backend, create a protected backup, run `scripts/load_realistic_demo.py --yes`,

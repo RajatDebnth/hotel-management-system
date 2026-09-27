@@ -13,12 +13,12 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 ## Current state
 
-- Current step: **Step 28 - Role routing and logout-history hardening**
-- Status: **DONE**
-- Last completed step: **Step 28 - Role routing and logout-history hardening**
-- Application state: Login now routes customers and administrators into separate workspaces, cross-role customer/admin pages are denied, administrator password changes and logout live inside the admin dashboard, and protected pages cannot be recovered with browser Back after logout. The realistic 20-customer dataset remains intact; payment Steps 15 and 16 remain paused.
+- Current step: **Step 30 - Landing-page booking and hotel-content refinement**
+- Status: **READY**
+- Last completed step: **Step 29 - Landing-page foundation**
+- Application state: The public landing page now uses a trustworthy navy/ivory/gold palette, contains the complete one-page hotel section structure, and exposes only Home, Gallery, Contact, Sign in, and Book Your Stay navigation choices on desktop and mobile. Existing booking, account, admin, and local data behavior is unchanged; payment Steps 15 and 16 remain paused.
 - User action currently required: None.
-- Next command: There is no active `READY` implementation step. Explicitly resume Step 15 or Step 16 when payment work should begin.
+- Next command: Say **"do next"** to implement Step 30.
 
 ## Standard execution contract
 
@@ -754,6 +754,58 @@ through logout, including browser-history behavior.
 
 ---
 
+## Step 29 - Landing-page foundation
+
+**Status:** DONE
+
+**Objective:** Replace the broad public navigation and green heritage presentation with
+a simple, trustworthy one-page hotel foundation.
+
+**Work:**
+
+- Limit desktop, mobile, and footer navigation to Home, Gallery, Contact, Sign in, and
+  Book Your Stay.
+- Add sticky, section-aware desktop navigation and a compact mobile menu.
+- Establish an ivory, deep-navy, slate, and muted-gold public palette.
+- Recompose the landing page into hero, assurances, hotel story, featured rooms,
+  facilities, gallery, contact, and final booking sections.
+- Preserve the existing live room catalog and all customer/admin application routes.
+
+**Acceptance checks:**
+
+- Only the five approved navigation choices are presented.
+- Home, Gallery, and Contact navigate to real landing-page sections.
+- Desktop and mobile layouts have no horizontal overflow and retain clear booking calls.
+- Frontend lint, type checking, unit tests, production build, and targeted desktop/mobile
+  browser journeys pass.
+
+---
+
+## Step 30 - Landing-page booking and hotel-content refinement
+
+**Status:** READY
+
+**Objective:** Turn the Phase 1 landing-page structure into a complete operational hotel
+entry point with functional availability controls and refined live content.
+
+**Work:**
+
+- Add usable check-in, check-out, and guest controls to the hero and carry them into the
+  existing availability results.
+- Refine hotel story, direct-booking trust information, and guest guidance.
+- Align live room cards with the new palette and improve their price, capacity, and
+  availability hierarchy.
+- Add focused tests for the hero search parameters and landing-page booking entry path.
+
+**Acceptance checks:**
+
+- Hero searches generate the correct room-list query for valid dates and guests.
+- Invalid or incomplete date ranges are clearly prevented or explained.
+- Live room content remains available when the API is healthy and degrades gracefully.
+- Frontend quality gates and desktop/mobile landing journeys pass.
+
+---
+
 ## Decision log
 
 - 2026-09-06: Next.js handles the UI and Supabase SSR session lifecycle.
@@ -777,6 +829,8 @@ through logout, including browser-history behavior.
 - 2026-09-25: Realistic acceptance records use fictional contact details under `example.com`; generated passwords and the mutable SQLite dataset remain local and ignored.
 
 ## Completion log
+
+- 2026-09-27: Step 29 completed. Simplified public desktop, mobile, and footer navigation to Home, Gallery, Contact, Sign in, and Book Your Stay; added section-aware active navigation; introduced the ivory/deep-navy/slate/muted-gold palette; and restructured the landing page around hotel story, live rooms, facilities, gallery, contact, and booking calls. Frontend lint and TypeScript passed, all ten unit tests passed, the production build completed, visual desktop/mobile review passed, and the targeted public Playwright journey passed in both desktop and mobile Chromium.
 
 - 2026-09-27: Step 28 completed. Added trusted role-aware login destinations with role-confined return paths, customer-only account and booking layouts, a dedicated administrator Security page, admin-shell logout, protected-response no-store headers, and protected-router cache invalidation on logout. Removed the administrator link into the customer workspace and extended browser journeys to prove customer/admin landing pages, cross-role denial, security navigation, logout, and browser-Back behavior on desktop and mobile. Frontend lint, generated route types, TypeScript, all ten unit tests, production build, backend Ruff and all 58 tests, and all ten Playwright journeys passed. The pre-browser database, uploads, and session key were restored after testing, removing temporary accounts while retaining the newly recovered administrator credential.
 
