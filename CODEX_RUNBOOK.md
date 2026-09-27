@@ -13,10 +13,10 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 ## Current state
 
-- Current step: **Step 27 - Realistic full-system acceptance dataset**
+- Current step: **Step 28 - Role routing and logout-history hardening**
 - Status: **DONE**
-- Last completed step: **Step 27 - Realistic full-system acceptance dataset**
-- Application state: The local application contains the preserved built-in administrator, 20 named customers, representative bookings across every lifecycle state, realistic enquiry work, and restored hotel inventory/media. Full API, backend, frontend, and desktop/mobile browser acceptance checks pass; payment Steps 15 and 16 remain paused.
+- Last completed step: **Step 28 - Role routing and logout-history hardening**
+- Application state: Login now routes customers and administrators into separate workspaces, cross-role customer/admin pages are denied, administrator password changes and logout live inside the admin dashboard, and protected pages cannot be recovered with browser Back after logout. The realistic 20-customer dataset remains intact; payment Steps 15 and 16 remain paused.
 - User action currently required: None.
 - Next command: There is no active `READY` implementation step. Explicitly resume Step 15 or Step 16 when payment work should begin.
 
@@ -724,6 +724,36 @@ workflow without deleting the built-in administrator identity.
 
 ---
 
+## Step 28 - Role routing and logout-history hardening
+
+**Status:** DONE
+
+**Objective:** Enforce separate customer and administrator workspaces from login
+through logout, including browser-history behavior.
+
+**Work:**
+
+- Select the post-login destination from the trusted authenticated role and constrain
+  any requested return path to that role's workspace.
+- Reject administrators from customer account/booking layouts and retain customer
+  denial on administrator layouts.
+- Add a dedicated administrator Security page for password changes and an admin-shell
+  logout control; remove the customer-area link from admin navigation.
+- Mark protected responses private/no-store and purge protected router caches during
+  logout so browser Back returns to login instead of redisplaying protected content.
+- Extend unit and desktop/mobile browser coverage for role landing, cross-role denial,
+  security navigation, logout, and browser Back.
+
+**Acceptance checks:**
+
+- Customer login defaults to `/account`; administrator login defaults to `/admin`.
+- Cross-role account, booking, and administrator routes redirect to the correct workspace.
+- Administrator password change and logout remain available without customer-area access.
+- After either role logs out, browser Back remains on a login route.
+- Backend and frontend quality gates and all desktop/mobile Playwright journeys pass.
+
+---
+
 ## Decision log
 
 - 2026-09-06: Next.js handles the UI and Supabase SSR session lifecycle.
@@ -747,6 +777,8 @@ workflow without deleting the built-in administrator identity.
 - 2026-09-25: Realistic acceptance records use fictional contact details under `example.com`; generated passwords and the mutable SQLite dataset remain local and ignored.
 
 ## Completion log
+
+- 2026-09-27: Step 28 completed. Added trusted role-aware login destinations with role-confined return paths, customer-only account and booking layouts, a dedicated administrator Security page, admin-shell logout, protected-response no-store headers, and protected-router cache invalidation on logout. Removed the administrator link into the customer workspace and extended browser journeys to prove customer/admin landing pages, cross-role denial, security navigation, logout, and browser-Back behavior on desktop and mobile. Frontend lint, generated route types, TypeScript, all ten unit tests, production build, backend Ruff and all 58 tests, and all ten Playwright journeys passed. The pre-browser database, uploads, and session key were restored after testing, removing temporary accounts while retaining the newly recovered administrator credential.
 
 - 2026-09-25: Step 27 completed. Backed up the prior live dataset to ignored local storage, preserved the built-in administrator identity, and replaced all other records with 20 named fictional customers, 20 representative bookings covering pending, confirmed, checked-in, checked-out, cancelled, and rejected states, 38 audit-history entries, 12 realistic administrative enquiries, eight rooms, six facilities, and restored media. Added a transactional stopped-backend loader, rollback-aware upload replacement, focused dataset regression, and a live acceptance verifier covering public catalog/availability, customer authentication/profile/bookings/cancellation/enquiries, authorization boundaries, administrator users/roles, complete inventory/media CRUD, operations, dashboard, reports, and logout. Backend Ruff and all 58 tests passed; frontend lint, types, all eight tests, and production build passed; all 42 live API checks and all ten desktop/mobile Playwright journeys passed. Temporary browser accounts and acceptance mutations were removed by a final clean reload, and new runtime credentials were retained only for secure local handoff.
 

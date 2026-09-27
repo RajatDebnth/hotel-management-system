@@ -86,6 +86,10 @@ test("customer can register, change password, sign out, and sign back in", async
 
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/account\?message=Administrator\+access\+is\+required\./);
+  await page.getByRole("button", { name: /sign out/i }).click();
+  await expect(page).toHaveURL(/\/login$/, { timeout: 45_000 });
+  await page.goBack();
+  await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 45_000 });
 });
 
 test("administrator can manage local user roles", async ({ page }) => {
@@ -107,8 +111,9 @@ test("administrator can manage local user roles", async ({ page }) => {
   await page.getByLabel("Email").fill("admin@example.com");
   await page.getByLabel("Password").fill(adminPassword!);
   await page.getByRole("button", { name: /sign in/i }).click();
-  await expect(page).toHaveURL(/\/account$/, { timeout: 45_000 });
-  await page.goto("/admin/users");
+  await expect(page).toHaveURL(/\/admin$/, { timeout: 45_000 });
+  await page.getByRole("link", { name: "Users" }).click();
+  await expect(page).toHaveURL(/\/admin\/users$/, { timeout: 45_000 });
   await expect(page.getByRole("heading", { name: /users and roles/i })).toBeVisible();
 
   const customer = page.locator("article").filter({ hasText: customerEmail });
@@ -128,4 +133,16 @@ test("administrator can manage local user roles", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /bookings and enquiries/i })).toBeVisible({
     timeout: 45_000,
   });
+
+  await page.goto("/account");
+  await expect(page).toHaveURL(/\/admin\?message=Customer\+accounts\+are\+restricted\+to\+visitors\./);
+  await page.goto("/book/deluxe-king");
+  await expect(page).toHaveURL(/\/admin\?message=Reservations\+must\+be\+created\+from\+a\+visitor\+account\./);
+  await page.getByRole("link", { name: "Security" }).click();
+  await expect(page).toHaveURL(/\/admin\/security$/, { timeout: 45_000 });
+  await expect(page.getByRole("heading", { name: "Security" })).toBeVisible();
+  await page.getByRole("button", { name: /sign out/i }).click();
+  await expect(page).toHaveURL(/\/login$/, { timeout: 45_000 });
+  await page.goBack();
+  await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 45_000 });
 });

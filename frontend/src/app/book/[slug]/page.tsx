@@ -17,6 +17,7 @@ export default async function BookRoom({ params, searchParams }: Props) {
   const query = await searchParams;
   const user = await getCurrentUser();
   if (!user) redirect(`/login?next=/book/${encodeURIComponent(slug)}`);
+  if (user.role !== "customer") redirect("/admin?message=Reservations+must+be+created+from+a+visitor+account.");
   const room = await getRoom(slug);
 
   return (

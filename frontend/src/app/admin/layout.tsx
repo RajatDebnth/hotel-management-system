@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { signOut } from "@/app/auth/actions";
 import { AdminSidebarNav } from "@/components/admin/admin-sidebar-nav";
+import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth/session";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
@@ -34,7 +36,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <div className="min-w-0">
         <header className="flex min-h-14 items-center justify-between border-b border-neutral-200 bg-white px-5 sm:px-8">
           <p className="text-sm font-medium text-neutral-500">Hotel operations</p>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Light workspace</p>
+          <form action={signOut}>
+            <Button type="submit" variant="outline" size="sm">Sign out</Button>
+          </form>
         </header>
         {children}
       </div>

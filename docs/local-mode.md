@@ -42,7 +42,7 @@ stop both services.
 
 The first backend start creates and seeds the database. It also creates the local
 administrator `admin@example.com` and prints a generated one-time password in the
-terminal. Sign in with that password and change it from the account page. The
+terminal. Sign in with that password and change it from **Admin → Security**. The
 password is not stored in the source archive or printed again.
 
 ## Local files

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
@@ -9,13 +10,10 @@ import {
   storeSessionFromResponse,
 } from "@/lib/auth/session";
 import { getPublicEnvironment } from "@/lib/env";
+import { destinationForRole, type ApplicationRole } from "@/lib/auth/routing";
 
 function value(formData: FormData, key: string): string {
   return String(formData.get(key) ?? "").trim();
-}
-
-function safeNext(valueToCheck: string, fallback: string): string {
-  return valueToCheck.startsWith("/") && !valueToCheck.startsWith("//") ? valueToCheck : fallback;
 }
 
 function messageUrl(path: string, kind: "error" | "message", message: string): string {
@@ -61,27 +59,39 @@ export async function signIn(formData: FormData) {
     password: value(formData, "password"),
   });
   if (!response.ok) redirect(messageUrl("/login", "error", "Invalid email or password."));
+  const identity = await response.json() as { role: ApplicationRole };
   await storeSessionFromResponse(response);
-  redirect(safeNext(value(formData, "next"), "/account"));
+  redirect(destinationForRole(identity.role, value(formData, "next")));
 }
 
 export async function signOut() {
   await authRequest("/api/v1/auth/logout");
   await clearSession();
+  revalidatePath("/account", "layout");
+  revalidatePath("/admin", "layout");
+  revalidatePath("/book", "layout");
   redirect("/login");
 }
 
-export async function changePassword(formData: FormData) {
+async function changePasswordFor(formData: FormData, destination: string) {
   const currentPassword = value(formData, "currentPassword");
   const newPassword = value(formData, "newPassword");
   const confirmPassword = value(formData, "confirmPassword");
   if (newPassword.length < 12 || newPassword !== confirmPassword) {
-    redirect(messageUrl("/account", "error", "Use matching new passwords of at least 12 characters."));
+    redirect(messageUrl(destination, "error", "Use matching new passwords of at least 12 characters."));
   }
   const response = await authRequest("/api/v1/auth/password", {
     current_password: currentPassword,
     new_password: newPassword,
   });
-  if (!response.ok) redirect(messageUrl("/account", "error", await errorDetail(response, "Password change failed.")));
-  redirect(messageUrl("/account", "message", "Password updated successfully."));
+  if (!response.ok) redirect(messageUrl(destination, "error", await errorDetail(response, "Password change failed.")));
+  redirect(messageUrl(destination, "message", "Password updated successfully."));
+}
+
+export async function changePassword(formData: FormData) {
+  return changePasswordFor(formData, "/account");
+}
+
+export async function changeAdminPassword(formData: FormData) {
+  return changePasswordFor(formData, "/admin/security");
 }

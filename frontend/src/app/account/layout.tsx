@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth/session";
 
 export default async function AccountLayout({ children }: { children: ReactNode }) {
-  if (!await getCurrentUser()) redirect("/login?next=/account");
+  const user = await getCurrentUser();
+  if (!user) redirect("/login?next=/account");
+  if (user.role !== "customer") redirect("/admin?message=Customer+accounts+are+restricted+to+visitors.");
 
   return (
     <div className="min-h-screen bg-muted/30">

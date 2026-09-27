@@ -19,7 +19,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       footer={<><span>New here? </span><Link className="font-medium text-foreground underline" href="/register">Create an account</Link></>}
     >
       <form action={signIn} className="space-y-4">
-        <input type="hidden" name="next" value={params.next ?? "/account"} />
+        <input type="hidden" name="next" value={params.next ?? ""} />
         <label className="block text-sm font-medium">Email
           <input className={fieldClassName} name="email" type="email" autoComplete="email" required />
         </label>

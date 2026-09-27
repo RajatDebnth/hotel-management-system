@@ -7,8 +7,13 @@ export function proxy(request: NextRequest) {
   const protectedPath = ["/account", "/admin", "/book"].some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
-  if (!protectedPath || request.cookies.has(SESSION_COOKIE_NAME)) {
-    return NextResponse.next();
+  if (!protectedPath) return NextResponse.next();
+  if (request.cookies.has(SESSION_COOKIE_NAME)) {
+    const response = NextResponse.next();
+    response.headers.set("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("Expires", "0");
+    return response;
   }
 
   const login = new URL("/login", request.url);

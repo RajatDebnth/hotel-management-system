@@ -26,7 +26,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe scripts\dev_server.py
 ```
 
-The API runs at <http://localhost:8000>; health is available at <http://localhost:8000/api/v1/health>. On the first startup, the server creates the database, seeds demo inventory, creates `admin@example.com`, and prints its one-time password. Change that password after signing in.
+The API runs at <http://localhost:8000>; health is available at <http://localhost:8000/api/v1/health>. On the first startup, the server creates the database, seeds demo inventory, creates `admin@example.com`, and prints its one-time password. Change that password from **Admin → Security** after signing in.
 
 ## Run the frontend
 
@@ -75,7 +75,7 @@ Reset deletes the local database and uploaded media. Import replaces all table d
 The administrator-password reset preserves users, bookings, inventory, enquiries,
 and uploads. It generates a new password for `admin@example.com` and invalidates all
 existing login sessions. Stop the backend before running it, then use the password
-printed only in that terminal and change it after signing in.
+printed only in that terminal and change it from **Admin → Security** after signing in.
 
 The realistic-demo loader is a destructive acceptance-data reset. It preserves the
 built-in administrator identity, replaces every other application record, restores

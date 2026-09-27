@@ -28,6 +28,12 @@ FastAPI http://localhost:8000
 
 FastAPI hashes passwords with PBKDF2-HMAC-SHA256 and signs eight-hour local session tokens. The token is stored in an HttpOnly, SameSite=Lax `hms_session` cookie. Protected endpoints load the current database role for every request. Customer and administrator checks remain separate; the frontend guard is an early navigation aid, not an authorization boundary.
 
+Successful login selects a role-confined destination: customers enter `/account`
+or their requested booking route, while administrators enter `/admin`. Customer
+account and booking layouts reject administrators, the admin layout rejects
+customers, and protected HTML responses are private/no-store so logout plus browser
+Back cannot reveal a previously rendered workspace.
+
 Cookie-authenticated unsafe requests must carry the configured frontend `Origin`. CORS allows only that exact origin and credentials. The default frontend and API origins are `http://localhost:3000` and `http://localhost:8000`.
 
 ## Startup

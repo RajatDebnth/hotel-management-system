@@ -4,9 +4,9 @@ import {
   ArrowUpRight,
   BedDouble,
   ClipboardList,
+  LockKeyhole,
   LayoutDashboard,
   Users,
-  UserRound,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -18,11 +18,11 @@ const primaryLinks = [
   { href: "/admin/inventory", label: "Inventory", icon: BedDouble },
   { href: "/admin/operations", label: "Operations", icon: ClipboardList },
   { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/security", label: "Security", icon: LockKeyhole },
 ];
 
 const secondaryLinks = [
   { href: "/", label: "View hotel", icon: ArrowUpRight },
-  { href: "/account", label: "Customer area", icon: UserRound },
 ];
 
 export function AdminSidebarNav() {

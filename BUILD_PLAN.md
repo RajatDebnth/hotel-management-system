@@ -155,4 +155,6 @@ Security-sensitive work reviews cookie/session handling, authorization, origin c
 - Step 26 added non-destructive local administrator credential recovery.
 - Step 27 added a destructive, repeatable 20-customer realistic acceptance dataset and
   full live API/browser verification workflow while preserving the built-in administrator.
+- Step 28 added role-confined login destinations and protected-workspace history/cache
+  hardening, plus a dedicated administrator security page and logout control.
 - Payment Steps 15 and 16 remain paused until the user explicitly resumes them.
