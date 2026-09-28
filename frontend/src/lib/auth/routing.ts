@@ -18,5 +18,5 @@ export function destinationForRole(role: ApplicationRole, requestedPath: string)
     requested.startsWith("/book/")
   )
     ? requested
-    : "/account";
+    : "/";
 }

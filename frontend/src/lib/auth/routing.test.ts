@@ -13,9 +13,10 @@ describe("destinationForRole", () => {
   });
 
   it("routes customers only into customer-owned workflows", () => {
-    expect(destinationForRole("customer", "")).toBe("/account");
-    expect(destinationForRole("customer", "/admin")).toBe("/account");
-    expect(destinationForRole("customer", "//outside.example")).toBe("/account");
+    expect(destinationForRole("customer", "")).toBe("/");
+    expect(destinationForRole("customer", "/admin")).toBe("/");
+    expect(destinationForRole("customer", "//outside.example")).toBe("/");
+    expect(destinationForRole("customer", "/account/stays")).toBe("/account/stays");
     expect(destinationForRole("customer", "/book/deluxe-king")).toBe("/book/deluxe-king");
   });
 });

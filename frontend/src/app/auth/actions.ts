@@ -50,7 +50,7 @@ export async function signUp(formData: FormData) {
   const response = await authRequest("/api/v1/auth/register", { full_name: fullName, email, password });
   if (!response.ok) redirect(messageUrl("/register", "error", await errorDetail(response, "Account creation failed.")));
   await storeSessionFromResponse(response);
-  redirect("/account");
+  redirect("/");
 }
 
 export async function signIn(formData: FormData) {
@@ -70,7 +70,8 @@ export async function signOut() {
   revalidatePath("/account", "layout");
   revalidatePath("/admin", "layout");
   revalidatePath("/book", "layout");
-  redirect("/login");
+  revalidatePath("/", "layout");
+  redirect("/");
 }
 
 async function changePasswordFor(formData: FormData, destination: string) {

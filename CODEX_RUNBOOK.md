@@ -13,12 +13,12 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 ## Current state
 
-- Current step: **Step 30 - Landing-page booking and hotel-content refinement**
+- Current step: **Step 31 - Customer account workspace split**
 - Status: **READY**
-- Last completed step: **Step 29 - Landing-page foundation**
-- Application state: The public landing page now uses a trustworthy navy/ivory/gold palette, contains the complete one-page hotel section structure, and exposes only Home, Gallery, Contact, Sign in, and Book Your Stay navigation choices on desktop and mobile. Existing booking, account, admin, and local data behavior is unchanged; payment Steps 15 and 16 remain paused.
+- Last completed step: **Step 30 - Authenticated landing header and customer redirect**
+- Application state: Normal customer registration and login now return to the public landing page, where the Sign in action becomes an accessible role-aware profile menu. Explicit customer account and booking return paths remain supported, administrator login still enters `/admin`, and the existing combined account page remains available until Step 31 splits it into focused pages. Payment Steps 15 and 16 remain paused.
 - User action currently required: None.
-- Next command: Say **"do next"** to implement Step 30.
+- Next command: Say **"do next"** to implement Step 31.
 
 ## Standard execution contract
 
@@ -781,12 +781,69 @@ a simple, trustworthy one-page hotel foundation.
 
 ---
 
-## Step 30 - Landing-page booking and hotel-content refinement
+## Step 30 - Authenticated landing header and customer redirect
+
+**Status:** DONE
+
+**Objective:** Keep authenticated customers on the public hotel experience while exposing
+their account actions through a compact role-aware profile menu.
+
+**Work:**
+
+- Make normal customer registration and login return to `/`, while preserving trusted
+  explicit `/account` and `/book` destinations and keeping administrators on `/admin`.
+- Replace Sign in with an accessible profile control when the landing header detects an
+  authenticated session.
+- Provide customer links for account overview, previous stays, personal details, password
+  and security, plus logout; provide administrator dashboard, security, and logout links.
+- Preserve the current account workspace through section anchors until Step 31 introduces
+  dedicated pages.
+- Extend focused unit and desktop/mobile browser coverage for anonymous, customer, and
+  administrator header states, redirect behavior, logout, and browser Back protection.
+
+**Acceptance checks:**
+
+- Anonymous visitors continue to see Sign in.
+- Normal customer registration/login lands on `/` and exposes the customer profile menu.
+- Trusted booking return paths and administrator destinations remain role-confined.
+- Logout returns to the landing page and browser Back cannot reopen protected content.
+- Frontend quality gates and targeted desktop/mobile customer journeys pass.
+
+---
+
+## Step 31 - Customer account workspace split
 
 **Status:** READY
 
-**Objective:** Turn the Phase 1 landing-page structure into a complete operational hotel
-entry point with functional availability controls and refined live content.
+**Objective:** Replace the combined customer account page with focused, consistent pages
+for overview, stay history, personal details, and password/security settings.
+
+**Work:**
+
+- Add dedicated account overview, previous-stays, personal-details, and security routes.
+- Reuse a responsive customer account shell with clear active navigation and a reliable
+  route back to the public hotel experience.
+- Group stay history into useful upcoming, active, and past/cancelled states without
+  changing booking ownership or cancellation rules.
+- Point the authenticated landing profile menu to the new routes.
+- Add route, navigation, responsive, authorization, and regression coverage.
+
+**Acceptance checks:**
+
+- Every customer profile-menu action opens a real dedicated page.
+- Account navigation clearly indicates the active page at desktop and mobile sizes.
+- Profile, password, booking history, and cancellation behavior remain protected and work.
+- Administrators and anonymous visitors remain unable to access customer account pages.
+- Frontend quality gates and targeted desktop/mobile account journeys pass.
+
+---
+
+## Step 32 - Landing-page booking and hotel-content refinement
+
+**Status:** PENDING
+
+**Objective:** Turn the landing-page structure into a complete operational hotel entry
+point with functional availability controls and refined live content.
 
 **Work:**
 
@@ -829,6 +886,8 @@ entry point with functional availability controls and refined live content.
 - 2026-09-25: Realistic acceptance records use fictional contact details under `example.com`; generated passwords and the mutable SQLite dataset remain local and ignored.
 
 ## Completion log
+
+- 2026-09-28: Step 30 completed. Changed normal customer registration/login and logout to return to the public landing page while preserving trusted customer account/booking return paths and the administrator dashboard destination. Added an accessible role-aware landing profile menu with customer account/stays/profile/security actions, administrator dashboard/security actions, and logout; retained the combined account workspace through temporary section anchors for the next split phase. Frontend lint and TypeScript passed, all 13 unit tests passed, the production build completed, and the targeted authenticated customer journey passed in desktop and mobile Chromium. The pre-browser database and session key were restored byte-for-byte after testing, removing temporary accounts and bookings.
 
 - 2026-09-27: Step 29 completed. Simplified public desktop, mobile, and footer navigation to Home, Gallery, Contact, Sign in, and Book Your Stay; added section-aware active navigation; introduced the ivory/deep-navy/slate/muted-gold palette; and restructured the landing page around hotel story, live rooms, facilities, gallery, contact, and booking calls. Frontend lint and TypeScript passed, all ten unit tests passed, the production build completed, visual desktop/mobile review passed, and the targeted public Playwright journey passed in both desktop and mobile Chromium.
 

@@ -25,8 +25,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       {(params.error || params.message) && <p className={`mt-6 rounded-xl p-4 text-sm ${params.error ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"}`} role={params.error ? "alert" : "status"}>{params.error ?? params.message}</p>}
       <div className="mt-10 grid gap-8 lg:grid-cols-[.8fr_1.2fr]">
         <div className="grid h-fit gap-8">
-          <ProfileForm profile={profile} />
-          <form action={changePassword} className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
+          <div id="profile" className="scroll-mt-24"><ProfileForm profile={profile} /></div>
+          <form id="security" action={changePassword} className="scroll-mt-24 rounded-3xl bg-white p-6 shadow-sm sm:p-8">
             <h2 className="font-heading text-3xl">Change password</h2>
             <p className="mt-2 text-sm text-[#5d6d65]">Use at least 12 characters.</p>
             <div className="mt-6 grid gap-4">
@@ -37,7 +37,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             <button className="mt-6 rounded-full bg-[#17352d] px-6 py-3 font-semibold text-white">Update password</button>
           </form>
         </div>
-        <section className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
+        <section id="stays" className="scroll-mt-24 rounded-3xl bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-end justify-between gap-4"><div><p className="eyebrow text-[#947039]">Your stays</p><h2 className="mt-2 font-heading text-3xl">Reservations</h2></div><Link href="/rooms" className="text-sm font-semibold underline">Book another stay</Link></div>
           {bookings.items.length === 0 ? (
             <div className="mt-8 rounded-2xl bg-[#f6f2e9] p-6"><p className="font-semibold">No reservations yet.</p><p className="mt-2 text-sm text-[#5d6d65]">Explore the rooms when you are ready for a quiet escape.</p></div>

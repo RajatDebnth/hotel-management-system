@@ -54,6 +54,11 @@ test("customer can register, change password, sign out, and sign back in", async
   await page.getByLabel("Password", { exact: true }).fill(initialPassword);
   await page.getByLabel("Confirm password").fill(initialPassword);
   await page.getByRole("button", { name: /create account/i }).click();
+  await expect(page).toHaveURL(/\/$/, { timeout: 45_000 });
+  const profileMenu = page.getByRole("button", { name: new RegExp(`open profile menu for ${email}`, "i") });
+  await expect(profileMenu).toBeVisible({ timeout: 45_000 });
+  await profileMenu.click();
+  await page.getByRole("menuitem", { name: "Account overview" }).click();
   await expect(page).toHaveURL(/\/account$/, { timeout: 45_000 });
   await expect(page.getByRole("heading", { name: /welcome, aarav desai/i })).toBeVisible();
 
@@ -68,11 +73,14 @@ test("customer can register, change password, sign out, and sign back in", async
   await expect(page.getByText("Password updated successfully.")).toBeVisible({ timeout: 45_000 });
 
   await page.getByRole("button", { name: /sign out/i }).click();
+  await expect(page).toHaveURL(/\/$/, { timeout: 45_000 });
+  await page.getByRole("link", { name: "Sign in", exact: true }).first().click();
   await expect(page).toHaveURL(/\/login$/, { timeout: 45_000 });
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(changedPassword);
   await page.getByRole("button", { name: /sign in/i }).click();
-  await expect(page).toHaveURL(/\/account$/, { timeout: 45_000 });
+  await expect(page).toHaveURL(/\/$/, { timeout: 45_000 });
+  await expect(page.getByRole("button", { name: new RegExp(`open profile menu for ${email}`, "i") })).toBeVisible({ timeout: 45_000 });
 
   const roomSlug = test.info().project.name.includes("mobile") ? "deluxe-king" : "garden-twin";
   const checkIn = new Date();
@@ -98,7 +106,7 @@ test("customer can register, change password, sign out, and sign back in", async
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/account\?message=Administrator\+access\+is\+required\./);
   await page.getByRole("button", { name: /sign out/i }).click();
-  await expect(page).toHaveURL(/\/login$/, { timeout: 45_000 });
+  await expect(page).toHaveURL(/\/$/, { timeout: 45_000 });
   await page.goBack();
   await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 45_000 });
 });
@@ -115,8 +123,11 @@ test("administrator can manage local user roles", async ({ page }) => {
   await page.getByLabel("Password", { exact: true }).fill("RoleCustomer!234");
   await page.getByLabel("Confirm password").fill("RoleCustomer!234");
   await page.getByRole("button", { name: /create account/i }).click();
-  await expect(page).toHaveURL(/\/account$/, { timeout: 45_000 });
-  await page.getByRole("button", { name: /sign out/i }).click();
+  await expect(page).toHaveURL(/\/$/, { timeout: 45_000 });
+  await page.getByRole("button", { name: new RegExp(`open profile menu for ${customerEmail}`, "i") }).click();
+  await page.getByRole("menuitem", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/$/, { timeout: 45_000 });
+  await page.getByRole("link", { name: "Sign in", exact: true }).first().click();
   await expect(page).toHaveURL(/\/login$/, { timeout: 45_000 });
 
   await page.getByLabel("Email").fill("admin@example.com");
@@ -153,7 +164,7 @@ test("administrator can manage local user roles", async ({ page }) => {
   await expect(page).toHaveURL(/\/admin\/security$/, { timeout: 45_000 });
   await expect(page.getByRole("heading", { name: "Security" })).toBeVisible();
   await page.getByRole("button", { name: /sign out/i }).click();
-  await expect(page).toHaveURL(/\/login$/, { timeout: 45_000 });
+  await expect(page).toHaveURL(/\/$/, { timeout: 45_000 });
   await page.goBack();
   await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 45_000 });
 });
