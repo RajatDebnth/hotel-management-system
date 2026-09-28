@@ -46,9 +46,9 @@ describe("SiteHeader", () => {
 
     expect(screen.getByRole("menu", { name: "Profile menu" })).toBeVisible();
     expect(screen.getByRole("menuitem", { name: "Account overview" })).toHaveAttribute("href", "/account");
-    expect(screen.getByRole("menuitem", { name: "Previous stays" })).toHaveAttribute("href", "/account#stays");
-    expect(screen.getByRole("menuitem", { name: "Personal details" })).toHaveAttribute("href", "/account#profile");
-    expect(screen.getByRole("menuitem", { name: "Password & security" })).toHaveAttribute("href", "/account#security");
+    expect(screen.getByRole("menuitem", { name: "Previous stays" })).toHaveAttribute("href", "/account/stays");
+    expect(screen.getByRole("menuitem", { name: "Personal details" })).toHaveAttribute("href", "/account/details");
+    expect(screen.getByRole("menuitem", { name: "Password & security" })).toHaveAttribute("href", "/account/security");
     expect(screen.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
   });
 

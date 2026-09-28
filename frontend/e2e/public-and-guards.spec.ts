@@ -1,4 +1,11 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+async function expectNoHorizontalOverflow(page: Page) {
+  const hasOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  );
+  expect(hasOverflow).toBe(false);
+}
 
 test("public journey has no horizontal overflow and exposes core navigation", async ({ page }) => {
   await page.goto("/");
@@ -17,16 +24,16 @@ test("public journey has no horizontal overflow and exposes core navigation", as
   await expect(page.getByRole("link", { name: "Book Your Stay", exact: true }).first()).toBeVisible();
   await expect(page.getByRole("heading", { name: /a closer look at the house/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: /let.s make your stay feel easy/i })).toBeVisible();
-  const hasOverflow = await page.evaluate(
-    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-  );
-  expect(hasOverflow).toBe(false);
+  await expectNoHorizontalOverflow(page);
 });
 
 test("anonymous customer and admin routes redirect to login without losing destination", async ({
   page,
 }) => {
   await page.goto("/account");
+  await expect(page).toHaveURL(/\/login\?next=%2Faccount/);
+
+  await page.goto("/account/security");
   await expect(page).toHaveURL(/\/login\?next=%2Faccount/);
 
   await page.goto("/admin");
@@ -42,7 +49,7 @@ test("login form is keyboard-addressable and labelled", async ({ page }) => {
   await expect(page.getByRole("button", { name: /sign in/i })).toBeVisible();
 });
 
-test("customer can register, change password, sign out, and sign back in", async ({ page }) => {
+test("customer can use dedicated account pages, book, cancel, and reauthenticate", async ({ page }) => {
   test.setTimeout(120_000);
   const email = `aarav.desai.${Date.now()}.${test.info().project.name}@example.com`;
   const initialPassword = "LocalCustomer!234";
@@ -61,11 +68,24 @@ test("customer can register, change password, sign out, and sign back in", async
   await page.getByRole("menuitem", { name: "Account overview" }).click();
   await expect(page).toHaveURL(/\/account$/, { timeout: 45_000 });
   await expect(page.getByRole("heading", { name: /welcome, aarav desai/i })).toBeVisible();
+  const accountNavigation = page.getByRole("navigation", { name: "Customer account navigation" });
+  await expect(accountNavigation.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+  await expectNoHorizontalOverflow(page);
 
+  await accountNavigation.getByRole("link", { name: "Personal details", exact: true }).click();
+  await expect(page).toHaveURL(/\/account\/details$/, { timeout: 45_000 });
+  await expect(page.getByRole("heading", { name: "Personal details" })).toBeVisible();
+  await expect(accountNavigation.getByRole("link", { name: "Personal details", exact: true })).toHaveAttribute("aria-current", "page");
+  await expectNoHorizontalOverflow(page);
   await page.getByLabel("Phone").fill("9876543210");
   await page.getByRole("button", { name: /save profile/i }).click();
   await expect(page.getByText("Profile saved.")).toBeVisible({ timeout: 45_000 });
 
+  await accountNavigation.getByRole("link", { name: "Password & security", exact: true }).click();
+  await expect(page).toHaveURL(/\/account\/security$/, { timeout: 45_000 });
+  await expect(page.getByRole("heading", { name: "Password & security" })).toBeVisible();
+  await expect(accountNavigation.getByRole("link", { name: "Password & security", exact: true })).toHaveAttribute("aria-current", "page");
+  await expectNoHorizontalOverflow(page);
   await page.getByLabel("Current password").fill(initialPassword);
   await page.getByLabel("New password", { exact: true }).fill(changedPassword);
   await page.getByLabel("Confirm new password").fill(changedPassword);
@@ -80,7 +100,12 @@ test("customer can register, change password, sign out, and sign back in", async
   await page.getByLabel("Password").fill(changedPassword);
   await page.getByRole("button", { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/$/, { timeout: 45_000 });
-  await expect(page.getByRole("button", { name: new RegExp(`open profile menu for ${email}`, "i") })).toBeVisible({ timeout: 45_000 });
+  const restoredProfileMenu = page.getByRole("button", { name: new RegExp(`open profile menu for ${email}`, "i") });
+  await expect(restoredProfileMenu).toBeVisible({ timeout: 45_000 });
+  await restoredProfileMenu.click();
+  await page.getByRole("menuitem", { name: "Previous stays" }).click();
+  await expect(page).toHaveURL(/\/account\/stays$/, { timeout: 45_000 });
+  await expect(page.getByRole("heading", { name: "Previous stays" })).toBeVisible();
 
   const roomSlug = test.info().project.name.includes("mobile") ? "deluxe-king" : "garden-twin";
   const checkIn = new Date();
@@ -95,7 +120,12 @@ test("customer can register, change password, sign out, and sign back in", async
   await page.getByRole("button", { name: /request reservation/i }).click();
   await expect(page.getByRole("heading", { name: /pending confirmation/i })).toBeVisible();
   await page.getByRole("link", { name: /go to my account/i }).click();
+  await accountNavigation.getByRole("link", { name: "Previous stays", exact: true }).click();
+  await expect(accountNavigation.getByRole("link", { name: "Previous stays", exact: true })).toHaveAttribute("aria-current", "page");
+  await expectNoHorizontalOverflow(page);
   await page.locator('a[href^="/account/bookings/"]').first().click();
+  await expect(accountNavigation.getByRole("link", { name: "Previous stays", exact: true })).toHaveAttribute("aria-current", "page");
+  await expectNoHorizontalOverflow(page);
   await page.getByRole("button", { name: /cancel booking/i }).click();
   await page
     .getByLabel("Why are you cancelling?")

@@ -36,6 +36,12 @@ reject administrators, the admin layout rejects customers, and protected HTML re
 are private/no-store so logout plus browser Back cannot reveal a previously rendered
 workspace.
 
+The customer workspace uses dedicated `/account`, `/account/stays`, `/account/details`,
+and `/account/security` routes under one role-checked layout. Booking details remain
+nested under `/account/bookings/<reference>` and are treated as part of stay history.
+FastAPI ownership checks remain authoritative for profiles, reservations, cancellation,
+and password changes.
+
 Cookie-authenticated unsafe requests must carry the configured frontend `Origin`. CORS allows only that exact origin and credentials. The default frontend and API origins are `http://localhost:3000` and `http://localhost:8000`.
 
 ## Startup

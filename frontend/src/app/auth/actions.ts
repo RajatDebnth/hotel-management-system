@@ -90,7 +90,7 @@ async function changePasswordFor(formData: FormData, destination: string) {
 }
 
 export async function changePassword(formData: FormData) {
-  return changePasswordFor(formData, "/account");
+  return changePasswordFor(formData, "/account/security");
 }
 
 export async function changeAdminPassword(formData: FormData) {

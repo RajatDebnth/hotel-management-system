@@ -21,9 +21,9 @@ const sectionLinks = [
 
 const customerLinks = [
   ["Account overview", "/account", UserRound],
-  ["Previous stays", "/account#stays", History],
-  ["Personal details", "/account#profile", UserRoundPen],
-  ["Password & security", "/account#security", LockKeyhole],
+  ["Previous stays", "/account/stays", History],
+  ["Personal details", "/account/details", UserRoundPen],
+  ["Password & security", "/account/security", LockKeyhole],
 ] as const;
 
 const adminLinks = [
