@@ -25,6 +25,30 @@ test("public journey has no horizontal overflow and exposes core navigation", as
   await expect(page.getByRole("heading", { name: /a closer look at the house/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: /let.s make your stay feel easy/i })).toBeVisible();
   await expectNoHorizontalOverflow(page);
+
+  const checkIn = new Date();
+  checkIn.setUTCDate(checkIn.getUTCDate() + 45);
+  const checkOut = new Date(checkIn);
+  checkOut.setUTCDate(checkOut.getUTCDate() + 3);
+  const checkInValue = checkIn.toISOString().slice(0, 10);
+  const checkOutValue = checkOut.toISOString().slice(0, 10);
+  await page.getByLabel("Check in").fill(checkInValue);
+  await page.getByLabel("Check out").fill(checkOutValue);
+  await page.getByLabel("Guests").selectOption("2");
+  await page.getByRole("button", { name: /check availability/i }).click();
+  await expect(page).toHaveURL(new RegExp(`/rooms\\?check_in=${checkInValue}&check_out=${checkOutValue}&guests=2`));
+  await expect(page.getByText("Available for your stay")).toBeVisible();
+  await expect(page.getByText(`${checkInValue} → ${checkOutValue}`)).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await page.getByRole("link", { name: /^View / }).first().click();
+  await expect(page).toHaveURL(/\/rooms\/[^/?]+\?check_in=/, { timeout: 45_000 });
+  const roomUrl = new URL(page.url());
+  expect(roomUrl.searchParams.get("check_in")).toBe(checkInValue);
+  expect(roomUrl.searchParams.get("check_out")).toBe(checkOutValue);
+  expect(roomUrl.searchParams.get("guests")).toBe("2");
+  const reserveLink = page.getByRole("link", { name: "Reserve this room" });
+  await expect(reserveLink).toHaveAttribute("href", new RegExp(`check_in=${checkInValue}.*check_out=${checkOutValue}.*guests=2`));
 });
 
 test("anonymous customer and admin routes redirect to login without losing destination", async ({

@@ -164,6 +164,7 @@ Security-sensitive work reviews cookie/session handling, authorization, origin c
 - Step 31 split the combined customer account workspace into focused overview,
   previous-stays, personal-details, and security pages with grouped stay history and
   responsive active navigation.
-- Step 32 will make the hero availability controls functional and refine the hotel story,
-  trust signals, and live featured-room presentation.
+- Step 32 made the landing availability controls functional, preserved stay queries into
+  booking, and refined the hotel story, trust guidance, live room photos/inventory,
+  managed facilities, and graceful offline presentation.
 - Payment Steps 15 and 16 remain paused until the user explicitly resumes them.

@@ -36,6 +36,11 @@ export default async function RoomsPage({ searchParams }: Props) {
     getRooms({ pageSize: 100 }),
   ]);
   const hasDates = Boolean(filters.check_in && filters.check_out);
+  const stayParams = new URLSearchParams();
+  if (filters.check_in) stayParams.set("check_in", filters.check_in);
+  if (filters.check_out) stayParams.set("check_out", filters.check_out);
+  if (filters.guests) stayParams.set("guests", filters.guests);
+  const stayQuery = stayParams.toString();
   const activeFilters = Object.entries(filters).filter(([key, value]) => key !== "page" && value);
   const pageLink = (target: number) => {
     const params = new URLSearchParams(activeFilters as [string, string][]);
@@ -63,7 +68,7 @@ export default async function RoomsPage({ searchParams }: Props) {
             <div><p className="eyebrow text-[#947039]">{hasDates ? "Available for your stay" : "Our collection"}</p><h2 className="mt-3 font-heading text-4xl">{catalog.total} room type{catalog.total === 1 ? "" : "s"}</h2></div>
             {hasDates && <p className="text-sm text-[#68746e]">{filters.check_in} → {filters.check_out}</p>}
           </div>
-          {catalog.items.length ? <div className="grid gap-7 lg:grid-cols-3">{catalog.items.map((room, index) => <RoomCard key={room.slug} room={room} index={index} />)}</div> : <div className="rounded-3xl border bg-white p-12 text-center"><h2 className="font-heading text-3xl">No rooms match this stay</h2><p className="mt-3 text-[#68746e]">Try different dates, fewer guests, or a broader price range.</p><Link href="/rooms" className="mt-6 inline-block rounded-full bg-[#17352d] px-5 py-3 text-white">Clear all filters</Link></div>}
+          {catalog.items.length ? <div className="grid gap-7 lg:grid-cols-3">{catalog.items.map((room, index) => <RoomCard key={room.slug} room={room} index={index} stayQuery={stayQuery} />)}</div> : <div className="rounded-3xl border bg-white p-12 text-center"><h2 className="font-heading text-3xl">No rooms match this stay</h2><p className="mt-3 text-[#68746e]">Try different dates, fewer guests, or a broader price range.</p><Link href="/rooms" className="mt-6 inline-block rounded-full bg-[#17352d] px-5 py-3 text-white">Clear all filters</Link></div>}
           {catalog.pages > 1 && <nav aria-label="Room pages" className="mt-10 flex justify-center gap-3">{page > 1 && <Link className="rounded-full border px-5 py-2" href={pageLink(page - 1)}>Previous</Link>}<span className="px-3 py-2 text-sm text-[#68746e]">Page {page} of {catalog.pages}</span>{page < catalog.pages && <Link className="rounded-full border px-5 py-2" href={pageLink(page + 1)}>Next</Link>}</nav>}
         </div>
       </section>

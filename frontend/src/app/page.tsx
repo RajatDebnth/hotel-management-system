@@ -1,27 +1,41 @@
 import {
   ArrowRight,
-  CalendarDays,
   Clock3,
+  Coffee,
+  Dumbbell,
   Mail,
   MapPin,
   Phone,
   ShieldCheck,
+  Snowflake,
   Sparkles,
+  Tv,
+  Utensils,
+  Wifi,
 } from "lucide-react";
 import Link from "next/link";
 
+import { HeroAvailabilityForm } from "@/components/site/hero-availability-form";
 import { RoomCard } from "@/components/site/room-card";
 import { PublicShell } from "@/components/site/public-shell";
-import { getRooms } from "@/lib/api";
-import { facilities } from "@/lib/hotel-data";
+import { getFacilities, getRooms } from "@/lib/api";
+import { facilities as fallbackFacilities } from "@/lib/hotel-data";
 
 export const dynamic = "force-dynamic";
 
 const trustPoints = [
-  "Direct booking support",
-  "Clear room availability",
-  "Locally hosted since 1998",
+  ["Live room inventory", "Availability comes from the hotel’s active room ledger."],
+  ["Clear request status", "Follow pending, confirmed, or declined requests in your account."],
+  ["Human confirmation", "Every reservation request is reviewed by the house team."],
 ] as const;
+
+const bookingSteps = [
+  ["01", "Search live dates", "Choose your stay dates and party size to see room categories with space."],
+  ["02", "Send your request", "Sign in, share the guest details, and submit without making an online payment."],
+  ["03", "Follow confirmation", "The house team reviews the request and your account shows every status change."],
+] as const;
+
+const facilityIcons = { wifi: Wifi, snowflake: Snowflake, coffee: Coffee, tv: Tv, gym: Dumbbell, restaurant: Utensils };
 
 const galleryMoments = [
   ["The garden courtyard", "from-[#263D59] via-[#597183] to-[#C6A66C]", "md:col-span-2 md:row-span-2"],
@@ -30,7 +44,16 @@ const galleryMoments = [
 ] as const;
 
 export default async function Home() {
-  const catalog = await getRooms({ pageSize: 3 }).catch(() => null);
+  const [catalog, liveFacilities] = await Promise.all([
+    getRooms({ pageSize: 3 }).catch(() => null),
+    getFacilities().catch(() => null),
+  ]);
+  const displayedFacilities = liveFacilities?.length
+    ? liveFacilities.slice(0, 4).map((facility) => ({
+        ...facility,
+        icon: facilityIcons[facility.icon as keyof typeof facilityIcons] ?? Sparkles,
+      }))
+    : fallbackFacilities;
 
   return (
     <PublicShell>
@@ -69,35 +92,17 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="mt-14 grid overflow-hidden border border-white/20 bg-white/10 backdrop-blur-sm sm:grid-cols-3 lg:col-span-2 lg:max-w-4xl">
-            <div className="border-b border-white/15 p-5 sm:border-r sm:border-b-0">
-              <p className="flex items-center gap-2 text-xs text-white/60">
-                <CalendarDays className="size-4" /> Check in
-              </p>
-              <p className="mt-2 font-medium">Choose your dates</p>
-            </div>
-            <div className="border-b border-white/15 p-5 sm:border-r sm:border-b-0">
-              <p className="flex items-center gap-2 text-xs text-white/60">
-                <MapPin className="size-4" /> Location
-              </p>
-              <p className="mt-2 font-medium">Lakeside Quarter</p>
-            </div>
-            <Link
-              href="/rooms"
-              className="flex items-center justify-between bg-[#F8F7F3] p-5 font-semibold text-[#132A46] transition hover:bg-white"
-            >
-              Check availability <ArrowRight className="size-5" />
-            </Link>
-          </div>
+          <HeroAvailabilityForm />
         </div>
       </section>
 
       <section aria-label="Booking assurances" className="border-b border-[#D9DEE5] bg-white">
         <div className="site-container grid gap-px bg-[#D9DEE5] sm:grid-cols-3">
-          {trustPoints.map((point) => (
-            <p key={point} className="flex items-center gap-3 bg-white px-5 py-5 text-sm font-semibold text-[#405066]">
-              <ShieldCheck className="size-5 text-[#A9782F]" /> {point}
-            </p>
+          {trustPoints.map(([title, detail]) => (
+            <div key={title} className="flex gap-3 bg-white px-5 py-5">
+              <ShieldCheck className="mt-0.5 size-5 shrink-0 text-[#A9782F]" aria-hidden="true" />
+              <p><span className="block text-sm font-semibold text-[#132A46]">{title}</span><span className="mt-1 block text-xs leading-5 text-[#5F6875]">{detail}</span></p>
+            </div>
           ))}
         </div>
       </section>
@@ -111,8 +116,24 @@ export default async function Home() {
             </h2>
           </div>
           <div className="grid gap-5 text-lg leading-8 text-[#5F6875] sm:grid-cols-2">
-            <p>We restored a historic city home with patience, preserving its generous rooms, garden light, and warm neighbourhood spirit.</p>
-            <p>Today it is an intimate hotel with attentive service, excellent beds, thoughtful food, and everything needed for a calm stay.</p>
+            <p>Aurelia House is a small independent hotel built around generous rooms, garden light, and the warm rhythm of its lakeside neighbourhood.</p>
+            <p>Guests receive direct help from the house team, transparent room rates, and a booking request they can follow from submission to confirmation.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-[#D9DEE5] bg-[#E9EDF1] py-20" aria-labelledby="booking-process-title">
+        <div className="site-container">
+          <p className="eyebrow text-[#A06F29]">A clear booking process</p>
+          <h2 id="booking-process-title" className="mt-4 max-w-2xl font-heading text-4xl text-[#132A46] sm:text-5xl">From available room to confirmed stay.</h2>
+          <div className="mt-10 grid gap-px border border-[#CDD4DC] bg-[#CDD4DC] md:grid-cols-3">
+            {bookingSteps.map(([number, title, detail]) => (
+              <article key={number} className="bg-[#F8F7F3] p-7">
+                <p className="font-mono text-xs font-bold text-[#A06F29]">{number}</p>
+                <h3 className="mt-7 text-xl font-semibold text-[#132A46]">{title}</h3>
+                <p className="mt-3 text-sm leading-6 text-[#5F6875]">{detail}</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
@@ -123,8 +144,9 @@ export default async function Home() {
             <div>
               <p className="eyebrow text-[#A06F29]">Rest well</p>
               <h2 id="featured-rooms-title" className="mt-4 font-heading text-5xl text-[#132A46] sm:text-6xl">
-                Rooms with room to breathe.
+                Live rooms, clearly presented.
               </h2>
+              <p className="mt-4 max-w-2xl text-[#5F6875]">Compare capacity, room size, current inventory, and the nightly rate before opening the full details.</p>
             </div>
             <Link href="/rooms" className="inline-flex items-center gap-2 font-semibold text-[#132A46] underline decoration-[#C59A52] decoration-2 underline-offset-8">
               View all rooms <ArrowRight className="size-4" />
@@ -149,7 +171,7 @@ export default async function Home() {
             <h2 id="facilities-title" className="mt-4 font-heading text-5xl text-[#132A46]">Comfort, considered.</h2>
           </div>
           <div className="mt-12 grid gap-px border border-[#CDD4DC] bg-[#CDD4DC] sm:grid-cols-2 lg:grid-cols-4">
-            {facilities.map(({ name, description, icon: Icon }) => (
+            {displayedFacilities.map(({ name, description, icon: Icon }) => (
               <article key={name} className="bg-[#F8F7F3] p-7">
                 <Icon className="size-6 text-[#A9782F]" />
                 <h3 className="mt-8 font-heading text-2xl text-[#132A46]">{name}</h3>

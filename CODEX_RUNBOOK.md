@@ -13,12 +13,12 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 ## Current state
 
-- Current step: **Step 32 - Landing-page booking and hotel-content refinement**
-- Status: **READY**
-- Last completed step: **Step 31 - Customer account workspace split**
-- Application state: Authenticated customers now have a responsive account workspace with dedicated overview, previous-stays, personal-details, and password/security pages. Stay history is grouped into active, upcoming, and past/cancelled sections; booking detail and cancellation remain protected; account navigation and the landing profile menu point to real routes with active states. Payment Steps 15 and 16 remain paused.
-- User action currently required: None.
-- Next command: Say **"do next"** to implement Step 32.
+- Current step: **No active READY step - payment milestones remain deferred**
+- Status: **PAUSED**
+- Last completed step: **Step 32 - Landing-page booking and hotel-content refinement**
+- Application state: The local hotel system now includes a functional landing availability search, live room photos/inventory/facilities, query-preserving room and booking navigation, clear direct-booking guidance, protected customer workspaces, and the complete administrator workflow. Deferred Steps 15 and 16 remain paused exactly as requested.
+- User action currently required: Explicitly resume Deferred Step 15 and confirm its payment policies, or define a new product step. Deferred Step 16 additionally requires a selected payment provider and merchant/test account.
+- Next command: Say **"resume Step 15"** to begin planning manual QR/cash payment verification, or request a new feature.
 
 ## Standard execution contract
 
@@ -840,7 +840,7 @@ for overview, stay history, personal details, and password/security settings.
 
 ## Step 32 - Landing-page booking and hotel-content refinement
 
-**Status:** READY
+**Status:** DONE
 
 **Objective:** Turn the landing-page structure into a complete operational hotel entry
 point with functional availability controls and refined live content.
@@ -886,6 +886,8 @@ point with functional availability controls and refined live content.
 - 2026-09-25: Realistic acceptance records use fictional contact details under `example.com`; generated passwords and the mutable SQLite dataset remain local and ignored.
 
 ## Completion log
+
+- 2026-10-01: Step 32 completed. Replaced the decorative landing availability strip with validated check-in, check-out, and guest controls; routed valid searches into live room availability; preserved stay parameters from results through room details and the booking action; and added clear errors for incomplete, past, reversed, invalid, or unsupported searches. Refined the hotel story, live-inventory assurances, human confirmation guidance, and three-step booking explanation. Updated room cards to use administrator-managed cover photos with navy/ivory/gold fallbacks, current available-room counts, bed type, capacity, size, and nightly rate; connected the landing facilities section to live managed data with an offline fallback. Added deterministic validation, form, page-fallback, and desktop/mobile browser coverage. Frontend lint and TypeScript passed, all 23 unit tests passed, the production build completed, and the landing availability journey passed in desktop and mobile Chromium without horizontal overflow. Both local services are running.
 
 - 2026-09-28: Step 31 completed. Replaced the combined customer account screen with a responsive shared account shell and dedicated overview, previous-stays, personal-details, and password/security routes. Added route-aware desktop/mobile account navigation, grouped reservations into in-house, upcoming, and past/cancelled sections, added clearer stay cards and account-readiness actions, moved password feedback to the security page, connected the landing profile menu to the real routes, and kept booking details/cancellation inside the protected workspace. Added focused navigation and stay-grouping regressions plus expanded browser coverage for anonymous guards, active states, responsive overflow, profile/password updates, booking creation/cancellation, reauthentication, and customer/admin isolation. Frontend lint and TypeScript passed, all 18 unit tests passed, the production build completed, and all four targeted desktop/mobile Playwright journeys passed. The pre-browser database and session key were restored byte-for-byte after testing, removing all temporary accounts and bookings.
 

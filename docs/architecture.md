@@ -24,6 +24,13 @@ FastAPI http://localhost:8000
 - SQLite is the only application data store. Foreign keys, checks, unique indexes, serialized write transactions, and overlap triggers enforce persistent invariants.
 - Local filesystem storage owns uploaded room images. FastAPI validates content and coordinates file/database changes with compensating cleanup.
 
+The public landing page reads room categories, current availability, managed cover images,
+and active facilities from FastAPI. Its availability form sends checkout-exclusive dates
+and party size to `/rooms`; those parameters remain attached through room details and into
+the booking form. If the public API is temporarily unavailable, the landing page keeps its
+hotel content and facility fallback visible while clearly reporting that room details are
+unavailable.
+
 ## Authentication and authorization
 
 FastAPI hashes passwords with PBKDF2-HMAC-SHA256 and signs eight-hour local session tokens. The token is stored in an HttpOnly, SameSite=Lax `hms_session` cookie. Protected endpoints load the current database role for every request. Customer and administrator checks remain separate; the frontend guard is an early navigation aid, not an authorization boundary.
