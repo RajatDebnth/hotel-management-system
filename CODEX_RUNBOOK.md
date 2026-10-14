@@ -15,8 +15,8 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 - Current step: **No active READY step - payment milestones remain deferred**
 - Status: **PAUSED**
-- Last completed step: **Step 32 - Landing-page booking and hotel-content refinement**
-- Application state: The local hotel system now includes a functional landing availability search, live room photos/inventory/facilities, query-preserving room and booking navigation, clear direct-booking guidance, protected customer workspaces, and the complete administrator workflow. Deferred Steps 15 and 16 remain paused exactly as requested.
+- Last completed step: **Step 36 - Daily property operations dashboard**
+- Application state: The local hotel system now presents administration as a property-operations workspace with grouped front-desk/property/access navigation, a date-aware daily snapshot, room-position metrics, attention queues, arrivals/in-house/departures boards, recent activity, and supporting occupancy/revenue reporting. FastAPI supplies the dashboard as one protected operational snapshot. Existing inventory, reservation, visitor, administrator, image, and customer workflows remain intact. Deferred Steps 15 and 16 remain paused exactly as requested.
 - User action currently required: Explicitly resume Deferred Step 15 and confirm its payment policies, or define a new product step. Deferred Step 16 additionally requires a selected payment provider and merchant/test account.
 - Next command: Say **"resume Step 15"** to begin planning manual QR/cash payment verification, or request a new feature.
 
@@ -863,6 +863,107 @@ point with functional availability controls and refined live content.
 
 ---
 
+## Step 33 - Visitor photography and paused admin uploads
+
+**Status:** DONE
+
+**Objective:** Replace visitor-facing decorative image placeholders with the tracked hotel
+photographs while temporarily preventing new image uploads from the administrator UI.
+
+**Work:**
+
+- Use the existing local hotel photographs in the landing hero, landing gallery, gallery page,
+  and room-detail hero.
+- Keep the administrator image-upload interface visible but disabled with a clear availability
+  notice.
+- Preserve existing image records and their cover/delete management controls.
+- Add focused regressions for photographic landing content and unavailable upload controls.
+
+**Acceptance checks:**
+
+- Public photographic sections render at desktop and mobile sizes without overflow.
+- Room details use the selected room photograph with readable text contrast.
+- The administrator upload file field and submit action are disabled and explain why.
+- Frontend lint, type checking, unit tests, and production build pass.
+
+---
+
+## Step 34 - Direct visitor room-image delivery
+
+**Status:** DONE
+
+**Objective:** Ensure administrator-managed room photographs render reliably in every visitor
+room card instead of falling back to a broken-image gradient.
+
+**Work:**
+
+- Bypass the Next.js optimizer for room-card media served by the local FastAPI media mount.
+- Retain the existing cover-image selection, accessible alternative text, sizing, and visual
+  overlays.
+- Add a regression proving the stored media URL is delivered directly.
+
+**Acceptance checks:**
+
+- Every catalog image URL returns successfully from FastAPI.
+- Visitor room-card images load with non-zero natural dimensions and no broken-image icons.
+- Frontend lint, type checking, unit tests, and production build pass.
+
+---
+
+## Step 35 - Separate visitor and administrator accounts
+
+**Status:** DONE
+
+**Objective:** Remove visitor-to-administrator promotion and provide a dedicated workflow for
+creating staff administrator accounts.
+
+**Work:**
+
+- Make the visitor list read-only and remove every “Make administrator” action.
+- Add a separate protected administrator-creation form with staff name, email, and a hashed
+  temporary password.
+- Separate visitors and administrators visually in the administrator workspace.
+- Reject direct visitor promotion at the API boundary while preserving administrator access
+  removal, self-demotion denial, and the final-administrator safeguard.
+- Regenerate the OpenAPI TypeScript contract and add backend/frontend regressions.
+
+**Acceptance checks:**
+
+- Visitor registration still creates only visitor/customer accounts.
+- Existing visitors cannot be promoted through either the UI or API.
+- Only an authenticated administrator can create a separate administrator account.
+- Duplicate staff email, password validation, authorization, and administrator login work.
+- Backend focused authentication tests and all frontend quality gates pass.
+
+---
+
+## Step 36 - Daily property operations dashboard
+
+**Status:** DONE
+
+**Objective:** Adapt proven property-management information architecture into an original,
+daily administrator command center without importing third-party source code.
+
+**Work:**
+
+- Review Kamra PMS public documentation and selected source files without cloning or pulling
+  the repository.
+- Group administrator navigation by front desk, property, and access responsibilities.
+- Make the dashboard date-aware and prioritize room position, work needing attention,
+  arrivals, in-house guests, departures, and recent reservations.
+- Extend the protected dashboard snapshot with bounded operational booking lists while
+  retaining FastAPI ownership of authorization and reporting rules.
+- Keep occupancy and immutable booked-revenue reporting as a secondary performance view.
+
+**Acceptance checks:**
+
+- The dashboard snapshot remains administrator-only and returns the correct movement lists.
+- The dashboard has useful empty states and responsive, sharp neutral layouts.
+- Sidebar active states still work for root and nested administrator routes.
+- Backend lint/tests and frontend lint/type/tests/build pass.
+
+---
+
 ## Decision log
 
 - 2026-09-06: Next.js handles the UI and Supabase SSR session lifecycle.
@@ -884,8 +985,17 @@ point with functional availability controls and refined live content.
 - 2026-09-08: At the user's request, recorded two separate paused payment milestones: Step 15 for manual administrator-verified QR/cash payments and Step 16 for later automated payment-gateway integration. Neither step may begin until the user explicitly resumes it.
 - 2026-09-23: Began the local-only migration on `codex/local-sqlite-mode` while preserving cloud commit `b617082` on `main` and the annotated `supabase-cloud-v1` tag. Selected a versioned SQLite initializer, idempotent first-run seed, standard-library PBKDF2 password hashing, generated first-run `admin@example.com` password, authenticated password changes, retained local `/docs`, no committed database, no default LAN mode, and a deliberate port of the existing async raw-SQL data layer rather than an ORM rewrite.
 - 2026-09-25: Realistic acceptance records use fictional contact details under `example.com`; generated passwords and the mutable SQLite dataset remain local and ignored.
+- 2026-10-13: Kamra PMS informed the administrator information hierarchy only. No third-party code was cloned, pulled, copied, or imported; the implementation remains original Next.js/FastAPI work. The daily dashboard uses one protected aggregate snapshot backed by existing domain services, and Kamra-only scope such as folios, housekeeping, POS, and multi-property switching was deliberately not introduced.
 
 ## Completion log
+
+- 2026-10-13: Step 36 completed. Reviewed Kamra PMS public documentation and selected UI/API source files without cloning the repository, then implemented an original daily property-operations dashboard. Grouped navigation now reflects front-desk, property, and administration responsibilities; the overview prioritizes room position, pending work, arrivals, in-house guests, departures, recent reservations, and date-aware reporting. Extended the protected FastAPI dashboard response with bounded movement lists and regenerated the TypeScript API contract. Backend Ruff and all 58 tests passed. Frontend lint and TypeScript passed, all 26 tests passed, and the production build completed. Authenticated visual inspection was limited because the current local administrator password is intentionally not stored or exposed; route protection was confirmed in the browser and the responsive layouts remain enforced by the verified component/build structure.
+
+- 2026-10-13: Step 35 completed. Removed visitor promotion from the administrator UI and separated access management into a dedicated administrator-creation form, an administrator list with protected access removal, and a read-only visitor list. Added an admin-only `POST /api/v1/admin/users/administrators` route that stores a salted password hash, returns no password, rejects duplicate email, and leaves public registration customer-only. Direct customer-to-admin role updates now return `409`; self-demotion and final-administrator protections remain. Regenerated the frontend OpenAPI contract and updated architecture/testing documentation. Backend Ruff passed and all focused authentication tests passed; the complete backend run reached 57 passing tests with one unrelated failure because an older booking fixture hard-codes 2026-10-10, now in the past. Frontend lint and TypeScript passed, all 26 unit tests passed, and the production build completed. Both local services are running.
+
+- 2026-10-13: Step 34 completed. Diagnosed visitor room-card failures as Next.js local image-optimizer requests returning broken images despite every FastAPI media URL returning `200`. Configured room cards to deliver the administrator-managed media URL directly, matching the already-working landing, gallery, room-detail, and administrator previews. Added a focused regression for direct media delivery. Browser verification confirmed all three room photographs load at their original 1536-pixel width with no broken-image icons. Frontend lint and TypeScript passed, all 25 unit tests passed, and the production build completed.
+
+- 2026-10-13: Step 33 completed. Replaced the landing hero, landing gallery, standalone gallery, and room-detail gradient placeholders with the three tracked local hotel photographs and accurate accessible captions; centralized their environment-aware media URLs. Kept the administrator image-upload form visible but disabled its complete fieldset and submit action with a clear current-unavailability notice, while preserving existing image records and cover/delete controls. Added landing-photo and disabled-upload regressions. Frontend lint and TypeScript passed, all 24 unit tests passed, the production build completed, and desktop/mobile browser review confirmed the landing hero, gallery layouts, and room-detail photography render correctly.
 
 - 2026-10-01: Step 32 completed. Replaced the decorative landing availability strip with validated check-in, check-out, and guest controls; routed valid searches into live room availability; preserved stay parameters from results through room details and the booking action; and added clear errors for incomplete, past, reversed, invalid, or unsupported searches. Refined the hotel story, live-inventory assurances, human confirmation guidance, and three-step booking explanation. Updated room cards to use administrator-managed cover photos with navy/ivory/gold fallbacks, current available-room counts, bed type, capacity, size, and nightly rate; connected the landing facilities section to live managed data with an offline fallback. Added deterministic validation, form, page-fallback, and desktop/mobile browser coverage. Frontend lint and TypeScript passed, all 23 unit tests passed, the production build completed, and the landing availability journey passed in desktop and mobile Chromium without horizontal overflow. Both local services are running.
 

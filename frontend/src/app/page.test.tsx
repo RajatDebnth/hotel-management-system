@@ -32,5 +32,6 @@ describe("Home", () => {
     expect(screen.getByRole("heading", { name: /from available room to confirmed stay/i })).toBeVisible();
     expect(screen.getByText(/room details are taking a short break/i)).toBeVisible();
     expect(screen.getByRole("heading", { name: "Breakfast table" })).toBeVisible();
+    expect(screen.getAllByRole("img", { name: /Deluxe King room with a king bed/i })).toHaveLength(2);
   });
 });

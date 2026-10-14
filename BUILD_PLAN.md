@@ -104,6 +104,8 @@ Booking ranges are half-open `[check_in, check_out)`. Pending, confirmed, and ch
 ## 6. Authentication and authorization
 
 - Registration creates only customers.
+- Existing visitor accounts cannot be promoted. Administrators create separate staff
+  administrator accounts through the protected administrator workspace.
 - Passwords require at least 12 characters and are stored as salted 600,000-iteration PBKDF2 hashes.
 - Sessions are eight-hour HS256 tokens in an HttpOnly, SameSite=Lax cookie.
 - The signing key is generated into ignored local storage.
@@ -133,11 +135,13 @@ Tracked demo images are copied into runtime storage during idempotent startup se
 
 ### Administrator
 
-- Sidebar dashboard with active navigation
+- Grouped, active sidebar navigation for front desk, property, and administration work
+- Date-aware daily operations board for room position, attention queues, arrivals,
+  in-house guests, departures, and recent reservation activity
 - Categories, physical rooms, facilities, and image management
 - Searchable/paginated booking and enquiry queues
 - Validated status transitions, reasons, assignment, and notes
-- User listing and protected role management
+- Read-only visitor listing, separate administrator creation, and protected administrator access removal
 - Current summary, occupancy, and booked-revenue reports
 
 ## 9. Quality gates
@@ -167,4 +171,6 @@ Security-sensitive work reviews cookie/session handling, authorization, origin c
 - Step 32 made the landing availability controls functional, preserved stay queries into
   booking, and refined the hotel story, trust guidance, live room photos/inventory,
   managed facilities, and graceful offline presentation.
+- Step 36 adapted proven PMS information architecture into an original daily administrator
+  operations dashboard and protected aggregate snapshot without importing third-party code.
 - Payment Steps 15 and 16 remain paused until the user explicitly resumes them.

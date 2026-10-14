@@ -83,4 +83,5 @@ export function getDashboardSummary(reportDate?: string, context: ApiRequestCont
 export function getOccupancyReport(startDate: string, endDate: string, context: ApiRequestContext = {}) { return apiFetch<OccupancyReport>(`/api/v1/admin/reports/occupancy?${new URLSearchParams({ start_date: startDate, end_date: endDate })}`, { cache: "no-store" }, context); }
 export function getRevenueReport(startDate: string, endDate: string, context: ApiRequestContext = {}) { return apiFetch<RevenueReport>(`/api/v1/admin/reports/revenue?${new URLSearchParams({ start_date: startDate, end_date: endDate })}`, { cache: "no-store" }, context); }
 export function getAdminUsers(context: ApiRequestContext = {}) { return apiFetch<AdminUser[]>("/api/v1/admin/users", { cache: "no-store" }, context); }
+export function createAdministrator(payload: { full_name: string; email: string; password: string }) { return apiFetch<AdminUser>("/api/v1/admin/users/administrators", jsonInit("POST", payload)); }
 export function updateAdminUserRole(id: string, role: AdminUser["role"]) { return apiFetch<AdminUser>(`/api/v1/admin/users/${id}/role`, jsonInit("PATCH", { role })); }

@@ -18,7 +18,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <div className="flex items-center justify-between gap-4 border-b border-neutral-200 pb-4 lg:block lg:pb-6">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">Aurelia House</p>
-              <p className="mt-1 text-lg font-semibold tracking-tight">Admin console</p>
+              <p className="mt-1 text-lg font-semibold tracking-tight">Property operations</p>
             </div>
             <span className="border border-neutral-300 bg-neutral-50 px-2 py-1 text-xs font-semibold text-neutral-600">LIVE</span>
           </div>
@@ -35,7 +35,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       </aside>
       <div className="min-w-0">
         <header className="flex min-h-14 items-center justify-between border-b border-neutral-200 bg-white px-5 sm:px-8">
-          <p className="text-sm font-medium text-neutral-500">Hotel operations</p>
+          <div>
+            <p className="text-sm font-semibold text-neutral-800">Aurelia House</p>
+            <p className="hidden text-xs text-neutral-500 sm:block">Single-property management workspace</p>
+          </div>
           <form action={signOut}>
             <Button type="submit" variant="outline" size="sm">Sign out</Button>
           </form>

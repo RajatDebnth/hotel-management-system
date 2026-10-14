@@ -9,7 +9,6 @@ import {
   deleteAdminRecord,
   saveAdminRecord,
   updateAdminImage,
-  uploadAdminImage,
 } from "@/lib/api";
 
 type Kind = "categories" | "rooms" | "facilities";
@@ -48,7 +47,7 @@ export function InventoryManager({ inventory }: { inventory: AdminInventory }) {
           {tab === "categories" && <CategoryForm key={editing ?? "new"} item={inventory.categories.find((x) => x.id === editing)} pending={pending} submit={(payload) => act(() => saveAdminRecord("categories", payload, editing ?? undefined))} />}
           {tab === "rooms" && <RoomForm key={editing ?? "new"} item={inventory.rooms.find((x) => x.id === editing)} categories={inventory.categories} pending={pending} submit={(payload) => act(() => saveAdminRecord("rooms", payload, editing ?? undefined))} />}
           {tab === "facilities" && <FacilityForm key={editing ?? "new"} item={inventory.facilities.find((x) => x.id === editing)} pending={pending} submit={(payload) => act(() => saveAdminRecord("facilities", payload, editing ?? undefined))} />}
-          {tab === "images" && <ImageForm categories={inventory.categories} pending={pending} submit={(form) => act(() => uploadAdminImage(form))} />}
+          {tab === "images" && <ImageForm categories={inventory.categories} />}
           {editing && <button onClick={() => setEditing(null)} className="mt-3 text-sm font-semibold text-neutral-500 underline underline-offset-4 hover:text-neutral-950">Cancel editing</button>}
         </section>
         <section className="admin-panel p-5 sm:p-6">
@@ -83,8 +82,8 @@ function RoomForm({ item, categories, pending, submit }: { item?: AdminInventory
 function FacilityForm({ item, pending, submit }: { item?: AdminInventory["facilities"][number]; pending: boolean; submit: Submit }) {
   return <JsonForm pending={pending} onSubmit={(f) => submit({ name: f.get("name"), icon: f.get("icon") || null, description: f.get("description"), is_active: f.get("is_active") === "on" })}><Field name="name" label="Name" value={item?.name} required /><Field name="icon" label="Icon name" value={item?.icon ?? ""} /><Field name="description" label="Description" value={item?.description} /><Check name="is_active" label="Active" checked={item?.is_active ?? true} /></JsonForm>;
 }
-function ImageForm({ categories, pending, submit }: { categories: AdminInventory["categories"]; pending: boolean; submit: (form: FormData) => void }) {
-  return <form className="mt-6 grid gap-4" onSubmit={(e) => { e.preventDefault(); submit(new FormData(e.currentTarget)); }}><label className="grid gap-2 text-sm font-semibold">Category<select name="category_id" className={input}>{categories.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label><Field name="alt_text" label="Alternative text" required /><Field name="sort_order" label="Display order" value="0" type="number" required /><label className="grid gap-2 text-sm font-semibold">Image<input name="file" type="file" accept="image/jpeg,image/png,image/webp" required className={input} /></label><Check name="is_cover" label="Use as cover" /><button disabled={pending} className="admin-primary-button">Upload image</button></form>;
+function ImageForm({ categories }: { categories: AdminInventory["categories"] }) {
+  return <div className="mt-6 grid gap-4"><p className="border border-neutral-300 bg-neutral-100 p-4 text-sm leading-6 text-neutral-700" role="status"><span className="block font-semibold text-neutral-950">Image upload is currently not available.</span>Existing hotel photographs remain visible below. Upload controls will be enabled in a future update.</p><fieldset disabled aria-disabled="true" className="grid gap-4 opacity-55"><label className="grid gap-2 text-sm font-semibold">Category<select name="category_id" className={input}>{categories.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label><Field name="alt_text" label="Alternative text" required /><Field name="sort_order" label="Display order" value="0" type="number" required /><label className="grid gap-2 text-sm font-semibold">Image<input name="file" type="file" accept="image/jpeg,image/png,image/webp" required className={input} /></label><Check name="is_cover" label="Use as cover" /><button type="button" disabled className="admin-primary-button">Image upload unavailable</button></fieldset></div>;
 }
 function JsonForm({ children, onSubmit, pending }: { children: React.ReactNode; onSubmit: (form: FormData) => void; pending: boolean }) { return <form className="mt-6 grid gap-4" onSubmit={(e) => { e.preventDefault(); onSubmit(new FormData(e.currentTarget)); }}>{children}<button disabled={pending} className="admin-primary-button">{pending ? "Saving…" : "Save changes"}</button></form>; }
 function Field({ name, label, value, type = "text", required = false }: { name: string; label: string; value?: string | number; type?: string; required?: boolean }) { return <label className="grid gap-2 text-sm font-semibold">{label}<input name={name} defaultValue={value} type={type} required={required} min={type === "number" ? 0 : undefined} step={type === "number" ? "0.01" : undefined} className={input} /></label>; }

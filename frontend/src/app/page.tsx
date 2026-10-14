@@ -13,12 +13,14 @@ import {
   Utensils,
   Wifi,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { HeroAvailabilityForm } from "@/components/site/hero-availability-form";
 import { RoomCard } from "@/components/site/room-card";
 import { PublicShell } from "@/components/site/public-shell";
 import { getFacilities, getRooms } from "@/lib/api";
+import { getHotelPhotographs } from "@/lib/hotel-images";
 import { facilities as fallbackFacilities } from "@/lib/hotel-data";
 
 export const dynamic = "force-dynamic";
@@ -37,12 +39,6 @@ const bookingSteps = [
 
 const facilityIcons = { wifi: Wifi, snowflake: Snowflake, coffee: Coffee, tv: Tv, gym: Dumbbell, restaurant: Utensils };
 
-const galleryMoments = [
-  ["The garden courtyard", "from-[#263D59] via-[#597183] to-[#C6A66C]", "md:col-span-2 md:row-span-2"],
-  ["Quiet mornings", "from-[#9A7443] via-[#D1B783] to-[#EEE5D4]", ""],
-  ["Rooms made for rest", "from-[#172F4D] via-[#506A84] to-[#AEBAC4]", ""],
-] as const;
-
 export default async function Home() {
   const [catalog, liveFacilities] = await Promise.all([
     getRooms({ pageSize: 3 }).catch(() => null),
@@ -54,6 +50,7 @@ export default async function Home() {
         icon: facilityIcons[facility.icon as keyof typeof facilityIcons] ?? Sparkles,
       }))
     : fallbackFacilities;
+  const hotelPhotographs = getHotelPhotographs();
 
   return (
     <PublicShell>
@@ -62,9 +59,8 @@ export default async function Home() {
         className="site-anchor relative overflow-hidden bg-[#132A46] text-white"
       >
         <div className="absolute inset-y-0 right-0 hidden w-[44%] overflow-hidden border-l border-white/10 lg:block">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1D3B60] via-[#556B7D] to-[#C59A52]" />
-          <div className="absolute inset-x-[18%] bottom-0 h-[78%] rounded-t-[12rem] border border-white/25 bg-white/10" />
-          <div className="absolute bottom-[9%] left-[6%] h-[40%] w-[34%] rounded-t-full bg-[#E6D3AF]/25" />
+          <Image unoptimized src={hotelPhotographs[0].src} alt={hotelPhotographs[0].alt} fill priority sizes="44vw" className="object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#132A46]/65 via-[#132A46]/15 to-transparent" />
         </div>
 
         <div className="site-container relative z-10 grid min-h-[690px] items-end pb-14 pt-20 lg:grid-cols-[1.12fr_.88fr] lg:pb-20">
@@ -192,10 +188,11 @@ export default async function Home() {
             <p className="text-lg leading-8 text-[#5F6875]">Quiet corners, considered rooms, and the garden light that gives every stay its own rhythm.</p>
           </div>
           <div className="mt-12 grid auto-rows-[220px] gap-4 md:grid-cols-4">
-            {galleryMoments.map(([caption, tone, span]) => (
-              <figure key={caption} className={`group relative overflow-hidden bg-gradient-to-br ${tone} ${span}`}>
-                <div className="absolute inset-6 rounded-t-[7rem] border border-white/25 bg-white/5 transition-transform duration-500 group-hover:scale-105" />
-                <figcaption className="absolute inset-x-6 bottom-5 text-sm font-semibold text-white drop-shadow">{caption}</figcaption>
+            {hotelPhotographs.map((photograph, index) => (
+              <figure key={photograph.file} className={`group relative overflow-hidden ${index === 0 ? "md:col-span-2 md:row-span-2" : ""}`}>
+                <Image unoptimized src={photograph.src} alt={photograph.alt} fill sizes={index === 0 ? "(min-width: 768px) 50vw, 100vw" : "(min-width: 768px) 25vw, 100vw"} className="object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#132A46]/75 via-transparent to-transparent" />
+                <figcaption className="absolute inset-x-6 bottom-5 text-sm font-semibold text-white drop-shadow">{photograph.caption}</figcaption>
               </figure>
             ))}
           </div>

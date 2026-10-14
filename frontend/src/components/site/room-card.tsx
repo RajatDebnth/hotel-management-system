@@ -19,7 +19,7 @@ export function RoomCard({ room, index = 0, stayQuery = "" }: { room: CatalogRoo
   return (
     <article className="group overflow-hidden border border-[#D9DEE5] bg-white shadow-[0_22px_55px_-45px_rgba(19,42,70,.65)]">
       <div className={`room-art relative aspect-[4/3] overflow-hidden bg-gradient-to-br ${tones[index % tones.length]}`}>
-        {cover && <Image src={cover.url} alt={cover.alt_text || room.name} fill sizes="(min-width: 1024px) 33vw, 100vw" className="object-cover transition duration-700 group-hover:scale-[1.03]" />}
+        {cover && <Image unoptimized src={cover.url} alt={cover.alt_text || room.name} fill sizes="(min-width: 1024px) 33vw, 100vw" className="object-cover transition duration-700 group-hover:scale-[1.03]" />}
         <div className="absolute inset-0 bg-gradient-to-t from-[#132A46]/55 via-transparent to-transparent" />
         <span className={`absolute left-4 top-4 border px-3 py-1.5 text-xs font-bold ${available ? "border-white/70 bg-white/95 text-[#132A46]" : "border-red-200 bg-red-50 text-red-700"}`}>
           {available ? `${room.available_room_count} available` : "No availability"}

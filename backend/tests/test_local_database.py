@@ -261,8 +261,8 @@ async def test_sqlite_services_preserve_catalog_booking_and_reports(tmp_path: Pa
                 customer,
                 BookingCreate(
                     category_id=UUID("10000000-0000-0000-0000-000000000003"),
-                    check_in="2026-10-10",
-                    check_out="2026-10-12",
+                    check_in="2027-10-10",
+                    check_out="2027-10-12",
                     adult_count=2,
                     child_count=0,
                     guest_name="Local Guest",
@@ -288,6 +288,11 @@ async def test_sqlite_services_preserve_catalog_booking_and_reports(tmp_path: Pa
             occupancy = await occupancy_report(session, booking.check_in, booking.check_out)
             revenue = await revenue_report(session, booking.check_in, booking.check_out)
             assert summary.occupied_rooms == 1
+            assert [item.booking_reference for item in summary.arrival_bookings] == [
+                booking.booking_reference
+            ]
+            assert summary.departure_bookings == []
+            assert summary.in_house_bookings == []
             assert occupancy.occupied_room_nights == 2
             assert revenue.booked_revenue == Decimal("8800.00")
     finally:

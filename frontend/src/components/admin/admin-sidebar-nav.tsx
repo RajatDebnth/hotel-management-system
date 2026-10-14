@@ -13,12 +13,25 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "cn";
 
-const primaryLinks = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/admin/inventory", label: "Inventory", icon: BedDouble },
-  { href: "/admin/operations", label: "Operations", icon: ClipboardList },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/security", label: "Security", icon: LockKeyhole },
+const navGroups = [
+  {
+    label: "Front desk",
+    links: [
+      { href: "/admin", label: "Today", icon: LayoutDashboard, exact: true },
+      { href: "/admin/operations", label: "Reservations", icon: ClipboardList },
+    ],
+  },
+  {
+    label: "Property",
+    links: [{ href: "/admin/inventory", label: "Rooms & inventory", icon: BedDouble }],
+  },
+  {
+    label: "Administration",
+    links: [
+      { href: "/admin/users", label: "People & access", icon: Users },
+      { href: "/admin/security", label: "Security", icon: LockKeyhole },
+    ],
+  },
 ];
 
 const secondaryLinks = [
@@ -30,28 +43,26 @@ export function AdminSidebarNav() {
 
   return (
     <>
-      <nav aria-label="Admin navigation" className="flex min-w-max gap-1 lg:grid lg:min-w-0">
-        {primaryLinks.map((item) => {
-          const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "group flex min-h-11 min-w-32 items-center gap-3 border border-transparent px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 lg:min-w-0",
-                active
-                  ? "border-neutral-950 bg-neutral-950 text-white"
-                  : "text-neutral-600 hover:border-neutral-300 hover:bg-neutral-100 hover:text-neutral-950",
-              )}
-            >
-              <Icon className="size-4" aria-hidden="true" />
-              <span>{item.label}</span>
-              {active && <span className="ml-auto size-1.5 bg-white" aria-hidden="true" />}
-            </Link>
-          );
-        })}
+      <nav aria-label="Admin navigation" className="flex min-w-max gap-1 lg:grid lg:min-w-0 lg:gap-5">
+        {navGroups.map((group) => <div key={group.label} className="contents lg:block">
+          <p className="mb-2 hidden px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-400 lg:block">{group.label}</p>
+          <div className="contents lg:grid lg:gap-1">
+            {group.links.map((item) => {
+              const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+              const Icon = item.icon;
+              return (
+                <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={cn(
+                  "group flex min-h-11 min-w-32 items-center gap-3 border border-transparent px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 lg:min-w-0",
+                  active ? "border-neutral-950 bg-neutral-950 text-white" : "text-neutral-600 hover:border-neutral-300 hover:bg-neutral-100 hover:text-neutral-950",
+                )}>
+                  <Icon className="size-4" aria-hidden="true" />
+                  <span>{item.label}</span>
+                  {active && <span className="ml-auto size-1.5 bg-white" aria-hidden="true" />}
+                </Link>
+              );
+            })}
+          </div>
+        </div>)}
       </nav>
 
       <div className="my-5 hidden border-t border-neutral-200 lg:block" />

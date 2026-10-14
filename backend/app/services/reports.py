@@ -62,6 +62,26 @@ async def dashboard_summary(session: AsyncSession, report_date: date) -> Dashboa
             {"today": report_date},
         )
     ).mappings().one()
+    async def booking_list(where: str, *, limit: int = 8):
+        return (
+            await session.execute(
+                text(
+                    f"{BOOKING_SELECT} where {where} "
+                    "order by b.check_in, b.created_at limit :limit"
+                ),
+                {"today": report_date, "limit": limit},
+            )
+        ).mappings().all()
+
+    arrivals = await booking_list(
+        "b.status in ('confirmed', 'checked_in') and b.check_in = :today"
+    )
+    departures = await booking_list(
+        "b.status in ('checked_in', 'checked_out') and b.check_out = :today"
+    )
+    in_house = await booking_list(
+        "b.status = 'checked_in' and b.check_in <= :today and b.check_out > :today"
+    )
     recent = (
         await session.execute(text(f"{BOOKING_SELECT} order by b.created_at desc limit 5"))
     ).mappings().all()
@@ -69,6 +89,13 @@ async def dashboard_summary(session: AsyncSession, report_date: date) -> Dashboa
         **totals,
         report_date=report_date,
         occupancy_percentage=percentage(totals["occupied_rooms"], totals["total_active_rooms"]),
+        arrival_bookings=[BookingResponse.model_validate(booking_values(row)) for row in arrivals],
+        departure_bookings=[
+            BookingResponse.model_validate(booking_values(row)) for row in departures
+        ],
+        in_house_bookings=[
+            BookingResponse.model_validate(booking_values(row)) for row in in_house
+        ],
         recent_bookings=[BookingResponse.model_validate(booking_values(row)) for row in recent],
     )
 

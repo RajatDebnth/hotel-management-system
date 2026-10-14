@@ -1,5 +1,6 @@
 import { ArrowLeft, Check, Users } from "lucide-react";
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -25,11 +26,13 @@ export default async function RoomDetail({ params, searchParams }: Props) {
   const size = room.room_size_sq_m
     ? `${Number(room.room_size_sq_m)} m²`
     : "Comfortable layout";
+  const cover = room.images?.find((image) => image.is_cover) ?? room.images?.[0];
 
   return (
     <PublicShell>
-      <section className="relative min-h-[650px] bg-gradient-to-br from-[#29483e] via-[#718076] to-[#c8aa75] pt-32 text-white">
-        <div className="absolute inset-0 bg-gradient-to-t from-[#102a23]/90 via-transparent to-[#102a23]/30" />
+      <section className="relative min-h-[650px] overflow-hidden bg-[#132A46] pt-32 text-white">
+        {cover && <Image unoptimized src={cover.url} alt={cover.alt_text || room.name} fill priority sizes="100vw" className="object-cover" />}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#102a23]/80 via-[#102a23]/10 to-[#102a23]/10" />
         <div className="site-container relative flex min-h-[500px] flex-col justify-between pb-12">
           <Link href="/rooms" className="inline-flex w-fit items-center gap-2 text-sm">
             <ArrowLeft className="size-4" />All rooms

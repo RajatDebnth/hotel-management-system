@@ -15,6 +15,9 @@ class DashboardSummary(BaseModel):
     departures: int
     pending_bookings: int
     open_enquiries: int
+    arrival_bookings: list[BookingResponse]
+    departure_bookings: list[BookingResponse]
+    in_house_bookings: list[BookingResponse]
     recent_bookings: list[BookingResponse]
 
 

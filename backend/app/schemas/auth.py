@@ -33,6 +33,10 @@ class RegisterRequest(BaseModel):
         return normalized
 
 
+class AdminCreateRequest(RegisterRequest):
+    pass
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1, max_length=128)

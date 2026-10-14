@@ -17,6 +17,7 @@ FRONTEND_ORIGIN = "http://localhost:3000"
 ADMIN_PASSWORD = "TestAdminPassword!23"
 CUSTOMER_PASSWORD = "CustomerPassword!23"
 NEW_CUSTOMER_PASSWORD = "ChangedPassword!45"
+SECOND_ADMIN_PASSWORD = "SecondAdminPassword!67"
 
 
 def test_password_hashes_are_salted_and_verified() -> None:
@@ -90,6 +91,16 @@ async def test_local_auth_sessions_passwords_csrf_and_roles(tmp_path: Path) -> N
 
             forbidden_admin = await client.get("/api/v1/admin/users")
             assert forbidden_admin.status_code == 403
+            forbidden_admin_creation = await client.post(
+                "/api/v1/admin/users/administrators",
+                headers={"Origin": FRONTEND_ORIGIN},
+                json={
+                    "full_name": "Operations Manager",
+                    "email": "operations@example.com",
+                    "password": SECOND_ADMIN_PASSWORD,
+                },
+            )
+            assert forbidden_admin_creation.status_code == 403
 
             missing_origin = await client.post(
                 "/api/v1/auth/password",
@@ -125,9 +136,7 @@ async def test_local_auth_sessions_passwords_csrf_and_roles(tmp_path: Path) -> N
             )
             assert cross_site.status_code == 403
 
-            logout = await client.post(
-                "/api/v1/auth/logout", headers={"Origin": FRONTEND_ORIGIN}
-            )
+            logout = await client.post("/api/v1/auth/logout", headers={"Origin": FRONTEND_ORIGIN})
             assert logout.status_code == 204
             assert (await client.get("/api/v1/auth/me")).status_code == 401
 
@@ -167,15 +176,56 @@ async def test_local_auth_sessions_passwords_csrf_and_roles(tmp_path: Path) -> N
                 headers={"Origin": FRONTEND_ORIGIN},
                 json={"role": "admin"},
             )
-            assert promoted.status_code == 200
-            assert promoted.json()["role"] == "admin"
+            assert promoted.status_code == 409
+            assert "cannot be promoted" in promoted.json()["detail"]
+
+            administrator = await client.post(
+                "/api/v1/admin/users/administrators",
+                headers={"Origin": FRONTEND_ORIGIN},
+                json={
+                    "full_name": "Operations Manager",
+                    "email": "operations@example.com",
+                    "password": SECOND_ADMIN_PASSWORD,
+                },
+            )
+            assert administrator.status_code == 201
+            assert administrator.json()["role"] == "admin"
+            assert SECOND_ADMIN_PASSWORD not in administrator.text
+
+            duplicate_administrator = await client.post(
+                "/api/v1/admin/users/administrators",
+                headers={"Origin": FRONTEND_ORIGIN},
+                json={
+                    "full_name": "Duplicate Administrator",
+                    "email": "OPERATIONS@example.com",
+                    "password": SECOND_ADMIN_PASSWORD,
+                },
+            )
+            assert duplicate_administrator.status_code == 409
+
+            users = await client.get("/api/v1/admin/users")
+            roles = {item["email"]: item["role"] for item in users.json()}
+            assert roles == {
+                "admin@example.com": "admin",
+                "customer@example.com": "customer",
+                "operations@example.com": "admin",
+            }
+
+            await client.post("/api/v1/auth/logout", headers={"Origin": FRONTEND_ORIGIN})
+            second_admin_login = await client.post(
+                "/api/v1/auth/login",
+                json={
+                    "email": "operations@example.com",
+                    "password": SECOND_ADMIN_PASSWORD,
+                },
+            )
+            assert second_admin_login.status_code == 200
+            assert second_admin_login.json()["role"] == "admin"
 
         expired_manager = LocalSessionManager(
             "test-signing-key-that-is-long-enough-for-hs256", lifetime_minutes=1
         )
-        expired_user = AuthenticatedUser(
-            id=customer_id, email="customer@example.com", role="admin"
-        )
+        expired_user = AuthenticatedUser(id=customer_id, email="customer@example.com", role="admin")
         expired_token = expired_manager.create(
             expired_user, now=datetime.now(UTC) - timedelta(minutes=2)
         )
