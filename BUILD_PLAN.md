@@ -6,7 +6,7 @@ Build a local-first, responsive hotel booking system for one property.
 
 - Customers browse rooms, check availability, register, sign in, manage a profile, create/view/cancel bookings, and submit enquiries.
 - Administrators manage room categories, rooms, facilities, images, bookings, enquiries, users, roles, dashboards, and reports.
-- Online payment capture, dynamic pricing, staff scheduling, and multi-hotel tenancy are deferred. Manual QR/cash confirmation and later gateway integration remain paused as Steps 15 and 16 in `CODEX_RUNBOOK.md`.
+- Online payment capture, dynamic pricing, staff scheduling, and multi-hotel tenancy are deferred. Manual QR/cash confirmation and later gateway integration are recorded in `PROJECT_STATUS.md`.
 
 ## 2. Active technology stack
 
@@ -84,7 +84,7 @@ backend/
   tests/                   isolated backend test suite
 
 docs/                      active local architecture and operations
-CODEX_RUNBOOK.md           ordered execution state
+PROJECT_STATUS.md          current capabilities and deferred work
 start_local.py             cross-platform two-service launcher
 ```
 
@@ -153,34 +153,8 @@ Backend changes must pass Ruff and pytest. Frontend changes must pass ESLint, ge
 
 Security-sensitive work reviews cookie/session handling, authorization, origin checks, secret tracking, validation, generic error responses, upload confinement, and booking concurrency.
 
-## 10. Remaining ordered work
+## 10. Remaining work
 
-`CODEX_RUNBOOK.md` is the execution tracker.
-
-- Steps 23 and 24 completed hosted-asset retirement, local documentation, data tooling, and the two-service launcher.
-- Step 25 completed offline release/security verification and zip-and-run packaging.
-- Step 26 added non-destructive local administrator credential recovery.
-- Step 27 added a destructive, repeatable 20-customer realistic acceptance dataset and
-  full live API/browser verification workflow while preserving the built-in administrator.
-- Step 28 added role-confined login destinations and protected-workspace history/cache
-  hardening, plus a dedicated administrator security page and logout control.
-- Step 29 established the public landing-page redesign foundation: an exact five-choice
-  navigation, section-aware one-page structure, and a trustworthy navy/ivory/gold palette.
-- Step 30 added normal post-authentication return to the landing page and an accessible,
-  role-aware profile menu while preserving trusted booking and admin destinations.
-- Step 31 split the combined customer account workspace into focused overview,
-  previous-stays, personal-details, and security pages with grouped stay history and
-  responsive active navigation.
-- Step 32 made the landing availability controls functional, preserved stay queries into
-  booking, and refined the hotel story, trust guidance, live room photos/inventory,
-  managed facilities, and graceful offline presentation.
-- Step 36 adapted proven PMS information architecture into an original daily administrator
-  operations dashboard and protected aggregate snapshot without importing third-party code.
-- Step 37 reduced the public landing page to the existing booking hero, combined About and
-  API-backed facilities content, one booking CTA, and the footer while preserving standalone
-  hotel-information routes.
-- Step 38 retired the standalone About route and its homepage link; the hotel story remains
-  fully represented inside the homepage About/facilities section.
-- Step 39 retired the generic Gallery route, promoted Rooms in public navigation, and added
-  five category-specific photographs plus an on-page image gallery to every seeded room type.
-- Payment Steps 15 and 16 remain paused until the user explicitly resumes them.
+Current capabilities and intentionally deferred work are maintained in `PROJECT_STATUS.md`.
+Manual payment verification, online payment-gateway integration, and the planned password-reset
+workflow must not begin until their product and security policies are confirmed.

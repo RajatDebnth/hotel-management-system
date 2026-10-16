@@ -1,2 +1,0 @@
-booking_reference,status,check_in,check_out,night_count,room_number,category_name,guest_name,guest_email,guest_phone,adult_count,child_count,price_per_night_paise,subtotal_paise,tax_amount_paise,total_amount_paise,created_at
-HMS-LOCAL-001,confirmed,2030-01-10,2030-01-12,2,101,Deluxe King,Guest One,guest@example.com,9876543210,2,0,520000,1040000,0,1040000,2026-10-16 04:22:14

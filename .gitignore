@@ -24,6 +24,7 @@ __pycache__/
 htmlcov/
 *.egg-info/
 backend/data/
+backend/.test-tmp/
 
 # Editors, OS, and scratch files
 .idea/

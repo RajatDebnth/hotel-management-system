@@ -1,6 +1,6 @@
 # Local-only mode plan (SQLite + FastAPI)
 
-**Status:** Phases 0-7 complete on `codex/local-sqlite-mode`.
+**Status:** Phases 0-7 complete.
 
 **Date:** 2026-09-23
 
@@ -174,7 +174,7 @@ This is an open decision. See section 19.
 
 **Status:** complete on 2026-09-23.
 
-1. Created the isolated branch `codex/local-sqlite-mode` from cloud release commit
+1. Created an isolated local-mode branch from cloud release commit
 
    `b617082`.
 
@@ -658,9 +658,7 @@ npm run verify
 
 - Rewrite `README.md` with the two-command setup and the zip-and-share notes.
 
-- Update `BUILD_PLAN.md` to add a phase for local-only operation, and update
-
-  `CODEX_RUNBOOK.md` with a new ordered set of steps for the migration.
+- Update `BUILD_PLAN.md` and `PROJECT_STATUS.md` for local-only operation.
 
 ## 15. Zip-and-share packaging
 

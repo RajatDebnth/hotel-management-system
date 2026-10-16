@@ -2,13 +2,17 @@
 
 A local-first hotel room booking application built with Next.js and FastAPI. It runs without cloud accounts: SQLite stores application data, signed HttpOnly cookies provide authentication, and room images live on the local filesystem.
 
+**Giving the project to a non-technical Windows user? Start with
+[START_HERE.md](START_HERE.md).** It covers extraction, one-time installation, daily
+startup, the first administrator login, password recovery, backups, and common errors.
+
 ## Repository structure
 
 - `frontend/` — Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui, Vitest, and Playwright
 - `backend/` — FastAPI, Pydantic, async SQLAlchemy, SQLite, local media storage, Ruff, and pytest
 - `docs/` — architecture, API, data, testing, backup, and reporting documentation
 - `BUILD_PLAN.md` — current product scope and local architecture
-- `CODEX_RUNBOOK.md` — ordered implementation tracker
+- `PROJECT_STATUS.md` — current capabilities, deferred work, and verification policy
 
 ## Prerequisites
 
@@ -22,7 +26,8 @@ No Docker, PostgreSQL, Supabase, Render, Vercel, or other hosted service is requ
 ```powershell
 cd backend
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -e . --no-deps
 .\.venv\Scripts\python.exe scripts\dev_server.py
 ```
 

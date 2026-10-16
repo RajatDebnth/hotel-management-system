@@ -14,7 +14,9 @@ ARCHIVE_PREFIX = "hotel-management-system/"
 
 REQUIRED_MEMBERS = {
     "README.md",
+    "START_HERE.md",
     "start_local.py",
+    "backend/requirements.txt",
     "backend/pyproject.toml",
     "frontend/package-lock.json",
     "backend/app/assets/demo/deluxe-king.png",
