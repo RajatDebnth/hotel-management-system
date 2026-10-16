@@ -67,6 +67,11 @@ async def test_database_initializes_and_reseeds_idempotently(tmp_path: Path) -> 
                 await connection.exec_driver_sql("select count(*) from room_categories")
             ).scalar_one()
             rooms = (await connection.exec_driver_sql("select count(*) from rooms")).scalar_one()
+            images_per_category = (
+                await connection.exec_driver_sql(
+                    "select category_id, count(*) from room_images group by category_id"
+                )
+            ).all()
             foreign_keys = (
                 await connection.exec_driver_sql("PRAGMA foreign_keys")
             ).scalar_one()
@@ -77,6 +82,7 @@ async def test_database_initializes_and_reseeds_idempotently(tmp_path: Path) -> 
         assert repeated_credential is None
         assert categories == 3
         assert rooms == 4
+        assert {count for _, count in images_per_category} == {5}
         assert foreign_keys == 1
     finally:
         await engine.dispose()
@@ -250,11 +256,15 @@ async def test_sqlite_services_preserve_catalog_booking_and_reports(tmp_path: Pa
                     max_guests=2,
                     bed_type="Queen",
                     room_size_sq_m=Decimal("24.5"),
+                    facility_ids=[UUID("20000000-0000-0000-0000-000000000001")],
                 ),
             )
             categories = (await inventory(session)).categories
             created_category = next(item for item in categories if item.id == category_id)
             assert created_category.base_price == Decimal("1234.56")
+            assert created_category.facility_ids == [
+                UUID("20000000-0000-0000-0000-000000000001")
+            ]
 
             booking = await create_booking(
                 session,

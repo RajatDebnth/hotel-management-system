@@ -1,7 +1,11 @@
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
+
+from app.schemas.booking import BookingResponse
+from app.schemas.timestamps import as_utc
 
 
 class TokenClaims(BaseModel):
@@ -53,6 +57,23 @@ class AdminUser(BaseModel):
     full_name: str
     role: Literal["customer", "admin"]
     is_active: bool
+
+
+class AdminVisitor(BaseModel):
+    id: UUID
+    email: EmailStr
+    emails: list[EmailStr]
+    full_name: str
+    phone: str | None
+    is_active: bool
+    created_at: datetime
+    account_count: int
+    bookings: list[BookingResponse]
+
+    @field_validator("created_at")
+    @classmethod
+    def normalize_created_at(cls, value: datetime) -> datetime:
+        return as_utc(value)
 
 
 class RoleUpdateRequest(BaseModel):

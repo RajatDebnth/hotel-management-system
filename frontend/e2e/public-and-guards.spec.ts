@@ -19,11 +19,12 @@ test("public journey has no horizontal overflow and exposes core navigation", as
     ? mainNavigation
     : page.getByRole("navigation", { name: "Mobile navigation" });
   await expect(navigation.getByRole("link", { name: "Home", exact: true })).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "Gallery", exact: true })).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "Contact", exact: true })).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "Rooms", exact: true })).toHaveAttribute("href", "/rooms");
+  await expect(navigation.getByRole("link", { name: "Contact", exact: true })).toHaveAttribute("href", "/contact");
   await expect(page.getByRole("link", { name: "Book Your Stay", exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("heading", { name: /a closer look at the house/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /let.s make your stay feel easy/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /heritage character, made effortless/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /comfort, considered/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /come away for a while/i })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
   const checkIn = new Date();
@@ -47,6 +48,9 @@ test("public journey has no horizontal overflow and exposes core navigation", as
   expect(roomUrl.searchParams.get("check_in")).toBe(checkInValue);
   expect(roomUrl.searchParams.get("check_out")).toBe(checkOutValue);
   expect(roomUrl.searchParams.get("guests")).toBe("2");
+  const roomGallery = page.getByRole("region", { name: /see every angle/i });
+  await expect(roomGallery).toBeVisible();
+  await expect(roomGallery.locator("img")).toHaveCount(4);
   const reserveLink = page.getByRole("link", { name: "Reserve this room" });
   await expect(reserveLink).toHaveAttribute("href", new RegExp(`check_in=${checkInValue}.*check_out=${checkOutValue}.*guests=2`));
 });

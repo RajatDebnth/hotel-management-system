@@ -27,6 +27,7 @@ export default async function RoomDetail({ params, searchParams }: Props) {
     ? `${Number(room.room_size_sq_m)} m²`
     : "Comfortable layout";
   const cover = room.images?.find((image) => image.is_cover) ?? room.images?.[0];
+  const detailImages = (room.images ?? []).filter((image) => image.id !== cover?.id);
 
   return (
     <PublicShell>
@@ -46,6 +47,37 @@ export default async function RoomDetail({ params, searchParams }: Props) {
           </div>
         </div>
       </section>
+      {detailImages.length > 0 && (
+        <section className="bg-[#F8F7F3] py-16" aria-labelledby="room-gallery-title">
+          <div className="site-container">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+              <div>
+                <p className="eyebrow text-[#A06F29]">Inside {room.name}</p>
+                <h2 id="room-gallery-title" className="mt-3 font-heading text-4xl text-[#132A46] sm:text-5xl">
+                  See every angle.
+                </h2>
+              </div>
+              <p className="max-w-md text-sm leading-6 text-[#5F6875]">
+                Sleeping space, living details, outlook, and ensuite—all from this room category.
+              </p>
+            </div>
+            <div className="mt-10 grid gap-4 md:grid-cols-2">
+              {detailImages.map((image) => (
+                <figure key={image.id} className="relative aspect-[3/2] overflow-hidden bg-[#E5E8EC]">
+                  <Image
+                    unoptimized
+                    src={image.url}
+                    alt={image.alt_text || `${room.name} interior`}
+                    fill
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                    className="object-cover"
+                  />
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
       <section className="py-20">
         <div className="site-container grid gap-12 lg:grid-cols-[1.25fr_.75fr]">
           <div>

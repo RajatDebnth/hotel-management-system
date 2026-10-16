@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.schemas.booking import BookingResponse
+from app.schemas.timestamps import as_utc
 
 BookingStatus = Literal[
     "pending", "confirmed", "checked_in", "checked_out", "cancelled", "rejected"
@@ -47,6 +48,11 @@ class EnquiryAdmin(BaseModel):
     admin_notes: str | None
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("created_at", "updated_at")
+    @classmethod
+    def normalize_timestamps(cls, value: datetime) -> datetime:
+        return as_utc(value)
 
 
 class AdminEnquiryList(BaseModel):

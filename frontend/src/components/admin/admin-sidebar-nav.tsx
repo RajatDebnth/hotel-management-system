@@ -3,9 +3,11 @@
 import {
   ArrowUpRight,
   BedDouble,
-  ClipboardList,
+  CalendarCheck,
   LockKeyhole,
   LayoutDashboard,
+  MessageSquareText,
+  ContactRound,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -18,7 +20,8 @@ const navGroups = [
     label: "Front desk",
     links: [
       { href: "/admin", label: "Today", icon: LayoutDashboard, exact: true },
-      { href: "/admin/operations", label: "Reservations", icon: ClipboardList },
+      { href: "/admin/bookings", label: "Bookings", icon: CalendarCheck },
+      { href: "/admin/enquiries", label: "Enquiries", icon: MessageSquareText },
     ],
   },
   {
@@ -29,6 +32,7 @@ const navGroups = [
     label: "Administration",
     links: [
       { href: "/admin/users", label: "People & access", icon: Users },
+      { href: "/admin/visitors", label: "Visitors", icon: ContactRound },
       { href: "/admin/security", label: "Security", icon: LockKeyhole },
     ],
   },

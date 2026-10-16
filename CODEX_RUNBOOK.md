@@ -15,8 +15,8 @@ This file turns `BUILD_PLAN.md` into an ordered implementation process. The user
 
 - Current step: **No active READY step - payment milestones remain deferred**
 - Status: **PAUSED**
-- Last completed step: **Step 36 - Daily property operations dashboard**
-- Application state: The local hotel system now presents administration as a property-operations workspace with grouped front-desk/property/access navigation, a date-aware daily snapshot, room-position metrics, attention queues, arrivals/in-house/departures boards, recent activity, and supporting occupancy/revenue reporting. FastAPI supplies the dashboard as one protected operational snapshot. Existing inventory, reservation, visitor, administrator, image, and customer workflows remain intact. Deferred Steps 15 and 16 remain paused exactly as requested.
+- Last completed step: **Step 46 - Timezone-correct operational timestamps**
+- Application state: SQLite continues to record real current time in UTC for profiles, bookings, enquiries, status history, cancellations, and updates. All timestamps exposed for booking, enquiry, and visitor administration are now serialized with an explicit UTC timezone, allowing browsers to display the correct local date and time instead of treating UTC as local. Rooms & Inventory retains its table-first facility, category, grouped-room, and room-media workflows. Deferred Steps 15 and 16 remain paused exactly as requested.
 - User action currently required: Explicitly resume Deferred Step 15 and confirm its payment policies, or define a new product step. Deferred Step 16 additionally requires a selected payment provider and merchant/test account.
 - Next command: Say **"resume Step 15"** to begin planning manual QR/cash payment verification, or request a new feature.
 
@@ -964,6 +964,227 @@ daily administrator command center without importing third-party source code.
 
 ---
 
+## Step 37 - Focused public homepage
+
+**Status:** DONE
+
+**Objective:** Reduce the landing page to the strongest visitor journey: the existing booking
+hero, a combined hotel story and facilities section, a booking call to action, and the footer.
+
+**Work:**
+
+- Preserve the established hero, imagery, primary booking actions, and availability form.
+- Combine hotel background and API-backed facilities into one responsive section with an
+  offline fallback.
+- Remove the homepage trust strip, booking-process explanation, room cards, gallery, and
+  contact blocks without removing their standalone routes or booking functionality.
+- Point Gallery and Contact navigation directly to their standalone pages and preserve clear
+  route-active states.
+- Add focused component and desktop/mobile browser coverage for the reduced structure.
+
+**Acceptance checks:**
+
+- The homepage main content contains only hero, combined About/facilities, and CTA sections.
+- The shared footer remains present and Gallery/Contact links resolve to standalone routes.
+- Live facilities render when the API is available and the existing fallback remains usable.
+- Frontend lint, type checking, unit tests, production build, and responsive public journey pass.
+
+---
+
+## Step 38 - Retire the standalone About page
+
+**Status:** DONE
+
+**Objective:** Remove the dedicated About route and keep the complete public hotel story
+inside the combined homepage About/facilities section.
+
+**Work:**
+
+- Delete the `/about` App Router page and its route-specific presentation.
+- Remove the homepage story link without changing the surrounding hotel copy or facilities.
+- Add a regression assertion that the removed link is absent.
+
+**Acceptance checks:**
+
+- `/about` is absent from the production route manifest and returns the application 404.
+- The homepage contains no link to `/about` and the About/facilities content remains visible.
+- Frontend lint, type checking, unit tests, and production build pass.
+
+---
+
+## Step 39 - Room-specific image galleries
+
+**Status:** DONE
+
+**Objective:** Retire the generic Gallery page and present useful, category-specific imagery
+where visitors make their room decision.
+
+**Work:**
+
+- Delete the `/gallery` route and replace Gallery with Rooms in desktop, mobile, and footer
+  navigation.
+- Add four coherent photographs to each seeded room category: entrance, living/detail,
+  bathroom, and outlook views, alongside the existing cover photograph.
+- Register all fifteen demo assets in confined local storage and idempotent SQLite seed data.
+- Add a responsive four-image gallery below the cover hero on each room-detail page.
+- Extend catalog seed and desktop/mobile journey coverage for the five-image contract.
+
+**Acceptance checks:**
+
+- `/gallery` is absent from the production route manifest and returns the application 404.
+- Each seeded room category exposes exactly five ordered images through FastAPI.
+- Room-detail pages render the cover plus four distinct supporting photographs.
+- Navigation uses Rooms everywhere, with no Gallery route references remaining.
+- Focused backend/frontend checks, production build, and desktop/mobile public journey pass.
+
+---
+
+## Step 40 - Separate administrator booking and enquiry workspaces
+
+**Status:** DONE
+
+**Objective:** Give bookings and enquiries independent destinations in the administrator sidebar.
+
+**Work:**
+
+- Replace the combined Reservations navigation item with Bookings and Enquiries.
+- Add dedicated `/admin/bookings` and `/admin/enquiries` pages that load only the data each queue needs.
+- Preserve existing filters, pagination, booking transitions, enquiry assignment, and enquiry notes.
+- Redirect the former `/admin/operations` route to Bookings.
+
+**Acceptance checks:**
+
+- Each sidebar destination has an independent active state.
+- Focused sidebar tests and TypeScript validation pass.
+
+---
+
+## Step 41 - Administrator booking register and detail dialog
+
+**Status:** DONE
+
+**Objective:** Make the administrator booking queue easier to scan and operate as a structured reservation register.
+
+**Work:**
+
+- Present bookings as a labeled row-and-column table with identity, guest, creation time, room, stay, guest-count, amount, and status fields.
+- Open a complete booking-detail dialog from every mouse- or keyboard-selected row.
+- Keep status changes constrained to the existing workflow and require an auditable confirmation/update note.
+- Retain search, status filtering, pagination, responsive horizontal scrolling, and final-state protections.
+
+**Acceptance checks:**
+
+- Focused lint and TypeScript validation pass.
+- Broader regression and browser testing remain deferred to the session-final verification at the user's request.
+
+---
+
+## Step 42 - Administrator enquiry register and detail dialog
+
+**Status:** DONE
+
+**Objective:** Give customer enquiries the same structured, detailed administrator experience as bookings.
+
+**Work:**
+
+- Present enquiries as a labeled table with identity, customer, subject, contact, submission date/time, assignee, and status fields.
+- Open a complete enquiry-detail dialog from every mouse- or keyboard-selected row.
+- Show the full customer message and record metadata in the dialog.
+- Preserve valid status transitions, administrator assignment, internal update notes, search, filtering, and pagination.
+
+**Acceptance checks:**
+
+- Focused lint and TypeScript validation pass.
+- Broader regression and browser testing remain deferred to the session-final verification at the user's request.
+
+---
+
+## Step 43 - Separate read-only visitor register
+
+**Status:** DONE
+
+**Objective:** Separate visitor records from staff access administration and provide a useful guest-history view without mutation controls.
+
+**Work:**
+
+- Add a dedicated Visitors sidebar destination and remove visitor cards from People & Access.
+- Add an administrator-only visitor API that returns each unique customer profile with its reservation history.
+- Present visitors in a labeled table with contact, join date, booking count, previous-stay count, recent reservation, and account status.
+- Open a read-only profile and complete booking-history dialog from each visitor row.
+- Keep visitor promotion, deletion, profile editing, and booking mutation out of this workspace.
+
+**Acceptance checks:**
+
+- Generated frontend API types include the visitor contract.
+- Focused backend authorization/data test, frontend access/sidebar tests, lint, and TypeScript validation pass.
+- Broader regression and browser testing remain deferred to the session-final verification at the user's request.
+
+---
+
+## Step 44 - Person-level visitor consolidation
+
+**Status:** DONE
+
+**Objective:** Prevent repeated account records for the same named visitor from appearing as separate visitor rows.
+
+**Work:**
+
+- Consolidate customer profiles by normalized visitor name in the administrator-only visitor response.
+- Preserve all linked account emails and bookings inside the consolidated visitor record.
+- Show linked-account counts in the table and every known email in the read-only popup.
+- Retain a representative visitor ID, earliest join date, available phone, active state, and combined reservation history without deleting local data.
+
+**Acceptance checks:**
+
+- Focused API authorization/data test, targeted lint, API generation, and TypeScript validation pass.
+- Broader regression and browser testing remain deferred to the session-final verification at the user's request.
+
+---
+
+## Step 45 - Tabular inventory workspace and room-level media
+
+**Status:** DONE
+
+**Objective:** Reorganize administrator inventory management around facilities, room categories, and category-grouped physical rooms.
+
+**Work:**
+
+- Replace card/list editors with labeled facility, category, and room tables.
+- Open add/edit forms in focused dialogs and retain guarded delete actions.
+- Define facilities independently and assign selected facilities to each room category transactionally.
+- Group physical rooms beneath their room category.
+- Place room-specific image upload, metadata, cover selection, and deletion inside each saved room's editor.
+- Keep existing category-level demonstration photographs intact for the visitor catalog.
+
+**Acceptance checks:**
+
+- Category facility assignments round-trip through the inventory API.
+- Focused SQLite inventory tests, room-image UI test, lint, generated API types, and TypeScript validation pass.
+- Broader regression and browser testing remain deferred to the session-final verification at the user's request.
+
+---
+
+## Step 46 - Timezone-correct operational timestamps
+
+**Status:** DONE
+
+**Objective:** Ensure stored operational times are real current timestamps and displayed in the administrator's local timezone.
+
+**Work:**
+
+- Confirm SQLite `CURRENT_TIMESTAMP` matches real UTC time for bookings, enquiries, profiles, updates, cancellations, and history.
+- Normalize timezone-less SQLite datetime values to explicit UTC at the API schema boundary.
+- Apply normalization to booking creation times, enquiry creation/update times, and visitor join times.
+- Let the existing browser date/time formatters convert explicit UTC values to the administrator's local timezone.
+
+**Acceptance checks:**
+
+- Focused timestamp serialization test proves API JSON includes the UTC `Z` suffix.
+- Timestamp-focused Ruff and pytest checks pass.
+- Local backend restarts with the corrected serialization active.
+
+---
+
 ## Decision log
 
 - 2026-09-06: Next.js handles the UI and Supabase SSR session lifecycle.
@@ -988,6 +1209,26 @@ daily administrator command center without importing third-party source code.
 - 2026-10-13: Kamra PMS informed the administrator information hierarchy only. No third-party code was cloned, pulled, copied, or imported; the implementation remains original Next.js/FastAPI work. The daily dashboard uses one protected aggregate snapshot backed by existing domain services, and Kamra-only scope such as folios, housekeeping, POS, and multi-property switching was deliberately not introduced.
 
 ## Completion log
+
+- 2026-10-16: Step 46 completed. Audited stored timestamps against Python UTC and SQLite current time; collection was real-time and accurate, but API values lacked timezone information, causing browsers in India to display them 5 hours 30 minutes early. Added shared UTC normalization to booking, enquiry, and visitor response schemas so JSON now includes an explicit `Z` suffix and browser tables/dialogs display correct local times. Focused Ruff and timestamp serialization tests passed, and the local backend was restarted with the correction active.
+
+- 2026-10-16: Step 45 completed. Rebuilt Rooms & Inventory as table-first Facilities, Room Categories, and category-grouped Rooms workspaces. Added row-selected add/edit dialogs, guarded delete controls, transactional category facility assignment, and room-level image upload/edit/cover/delete controls. Existing category demonstration photography remains available to the visitor catalog. Seven focused SQLite inventory tests and the focused room-image UI test passed; backend/frontend lint, generated API types, and TypeScript validation passed. Broad regression testing remains deferred as requested.
+
+- 2026-10-16: Step 44 completed. Diagnosed the repeated visitor rows as ten browser-created profiles sharing the normalized name Aarav Desai but using timestamp/device email variants. Changed the visitor API to produce one person-level row per normalized name while preserving all linked emails and combined reservation history in the popup. No data was deleted. Focused API tests, backend/frontend lint, generated API types, and TypeScript validation passed; the local backend was restarted with the correction active.
+
+- 2026-10-16: Step 43 completed. Separated Visitors from People & Access, leaving administrator account controls in the latter. Added an administrator-only visitor endpoint and generated contract that returns unique customer profiles with complete reservation history. Added a labeled visitor register and a row-selected, read-only profile/history dialog showing previous stays and all other bookings without mutation or promotion controls. Focused backend tests passed, including visitor denial and administrator access; four focused frontend access/navigation tests, targeted lint, API generation, and TypeScript validation passed. Broad regression testing remains deferred as requested.
+
+- 2026-10-16: Step 42 completed. Replaced the administrator enquiry cards with a labeled register table containing enquiry ID, customer, subject, email, phone, submission date/time, assignee, and status. Rows open an accessible detail dialog with the full customer message, account and record details, valid workflow transitions, administrator assignment, and internal update notes. Focused ESLint and TypeScript checks passed; broad regression testing was deferred as requested.
+
+- 2026-10-16: Step 41 completed. Replaced the administrator booking cards with a labeled reservation table containing booking ID, guest, booking date/time, room category and number, reservation dates, guest count, total, and status. Rows open an accessible booking-detail dialog containing all stored guest, stay, price, request, and booking information plus valid status transitions and a required audit/update message. Focused ESLint and TypeScript checks passed; broad regression testing was deferred as requested.
+
+- 2026-10-16: Step 40 completed. Split the administrator Reservations destination into independent Bookings and Enquiries sidebar links and pages while preserving the existing management workflows. The legacy combined Operations route redirects to Bookings. The focused sidebar test passed with three assertions and TypeScript validation passed; broader regression testing was deferred to the session-final verification as requested.
+
+- 2026-10-14: Step 39 completed. Deleted the standalone Gallery route and replaced Gallery with Rooms in desktop, mobile, and footer navigation. Generated twelve original category-consistent hotel photographs—entrance, living/detail, bathroom, and outlook views for Deluxe King, Family Suite, and Garden Twin—and registered them with the three existing covers in confined local storage and idempotent seed data. Room-detail pages now show a cover hero plus a responsive four-image “See every angle” gallery. Ruff passed; focused SQLite/storage tests passed using a workspace-local test directory; frontend lint, generated route types, TypeScript, and focused unit tests passed; and the Webpack production build omitted `/gallery`. The complete availability-to-room Playwright journey passed on desktop and mobile and asserted four supporting images. Browser inspection confirmed Rooms navigation, descriptive image alternatives, and the Gallery 404. Both local services were left running.
+
+- 2026-10-14: Step 38 completed. Deleted the standalone About App Router page and removed the homepage “Read our story” link while retaining the complete hotel introduction and facilities content on the homepage. Added a regression assertion for the absent link. Frontend lint passed, generated route types confirmed `/about` is no longer present, all 26 unit tests passed, and the Webpack production build completed with no About route in its manifest. Browser verification confirmed the rebuilt homepage has no story link and `/about` returns the application 404. The rebuilt frontend and local backend were left running.
+
+- 2026-10-14: Step 37 completed. Reduced the public homepage to the existing booking hero, a single combined About/facilities section, a focused booking CTA, and the shared footer. Removed the homepage trust, process, featured-room, gallery, and contact blocks while retaining standalone Gallery, Contact, About, Rooms, and booking routes. Changed public navigation to direct route links with route-active states and added focused regressions. Frontend lint and TypeScript passed, all 26 unit tests passed, the Webpack production build completed, and the full availability-to-room desktop/mobile Playwright journey passed with both local services running. Desktop and mobile visual inspection confirmed exactly three main sections and no horizontal overflow. The default Turbopack build path encountered an environment-level CSS worker startup panic, so the supported Webpack production path was used for the successful build verification.
 
 - 2026-10-13: Step 36 completed. Reviewed Kamra PMS public documentation and selected UI/API source files without cloning the repository, then implemented an original daily property-operations dashboard. Grouped navigation now reflects front-desk, property, and administration responsibilities; the overview prioritizes room position, pending work, arrivals, in-house guests, departures, recent reservations, and date-aware reporting. Extended the protected FastAPI dashboard response with bounded movement lists and regenerated the TypeScript API contract. Backend Ruff and all 58 tests passed. Frontend lint and TypeScript passed, all 26 tests passed, and the production build completed. Authenticated visual inspection was limited because the current local administrator password is intentionally not stored or exposed; route protection was confirmed in the browser and the responsive layouts remain enforced by the verified component/build structure.
 

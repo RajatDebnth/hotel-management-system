@@ -1,14 +1,9 @@
 import {
   ArrowRight,
-  Clock3,
   Coffee,
   Dumbbell,
-  Mail,
-  MapPin,
-  Phone,
-  ShieldCheck,
-  Snowflake,
   Sparkles,
+  Snowflake,
   Tv,
   Utensils,
   Wifi,
@@ -17,49 +12,37 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { HeroAvailabilityForm } from "@/components/site/hero-availability-form";
-import { RoomCard } from "@/components/site/room-card";
 import { PublicShell } from "@/components/site/public-shell";
-import { getFacilities, getRooms } from "@/lib/api";
+import { getFacilities } from "@/lib/api";
 import { getHotelPhotographs } from "@/lib/hotel-images";
 import { facilities as fallbackFacilities } from "@/lib/hotel-data";
 
 export const dynamic = "force-dynamic";
 
-const trustPoints = [
-  ["Live room inventory", "Availability comes from the hotel’s active room ledger."],
-  ["Clear request status", "Follow pending, confirmed, or declined requests in your account."],
-  ["Human confirmation", "Every reservation request is reviewed by the house team."],
-] as const;
-
-const bookingSteps = [
-  ["01", "Search live dates", "Choose your stay dates and party size to see room categories with space."],
-  ["02", "Send your request", "Sign in, share the guest details, and submit without making an online payment."],
-  ["03", "Follow confirmation", "The house team reviews the request and your account shows every status change."],
-] as const;
-
-const facilityIcons = { wifi: Wifi, snowflake: Snowflake, coffee: Coffee, tv: Tv, gym: Dumbbell, restaurant: Utensils };
+const facilityIcons = {
+  wifi: Wifi,
+  snowflake: Snowflake,
+  coffee: Coffee,
+  tv: Tv,
+  gym: Dumbbell,
+  restaurant: Utensils,
+};
 
 export default async function Home() {
-  const [catalog, liveFacilities] = await Promise.all([
-    getRooms({ pageSize: 3 }).catch(() => null),
-    getFacilities().catch(() => null),
-  ]);
+  const liveFacilities = await getFacilities().catch(() => null);
   const displayedFacilities = liveFacilities?.length
     ? liveFacilities.slice(0, 4).map((facility) => ({
         ...facility,
         icon: facilityIcons[facility.icon as keyof typeof facilityIcons] ?? Sparkles,
       }))
     : fallbackFacilities;
-  const hotelPhotographs = getHotelPhotographs();
+  const [heroPhotograph, aboutPhotograph] = getHotelPhotographs();
 
   return (
     <PublicShell>
-      <section
-        id="home"
-        className="site-anchor relative overflow-hidden bg-[#132A46] text-white"
-      >
+      <section id="home" className="site-anchor relative overflow-hidden bg-[#132A46] text-white">
         <div className="absolute inset-y-0 right-0 hidden w-[44%] overflow-hidden border-l border-white/10 lg:block">
-          <Image unoptimized src={hotelPhotographs[0].src} alt={hotelPhotographs[0].alt} fill priority sizes="44vw" className="object-cover" />
+          <Image unoptimized src={heroPhotograph.src} alt={heroPhotograph.alt} fill priority sizes="44vw" className="object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#132A46]/65 via-[#132A46]/15 to-transparent" />
         </div>
 
@@ -73,16 +56,10 @@ export default async function Home() {
               A quiet city hotel shaped by heritage rooms, thoughtful service, and the simple pleasure of slowing down.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <Link
-                href="/rooms"
-                className="inline-flex min-h-12 items-center gap-3 bg-[#C59A52] px-6 font-semibold text-[#132A46] transition hover:bg-[#D8B772]"
-              >
+              <Link href="/rooms" className="inline-flex min-h-12 items-center gap-3 bg-[#C59A52] px-6 font-semibold text-[#132A46] transition hover:bg-[#D8B772]">
                 Book Your Stay <ArrowRight className="size-4" />
               </Link>
-              <Link
-                href="#hotel"
-                className="inline-flex min-h-12 items-center border border-white/35 px-6 font-semibold text-white transition hover:bg-white/10"
-              >
+              <Link href="#hotel" className="inline-flex min-h-12 items-center border border-white/35 px-6 font-semibold text-white transition hover:bg-white/10">
                 Discover the hotel
               </Link>
             </div>
@@ -92,137 +69,47 @@ export default async function Home() {
         </div>
       </section>
 
-      <section aria-label="Booking assurances" className="border-b border-[#D9DEE5] bg-white">
-        <div className="site-container grid gap-px bg-[#D9DEE5] sm:grid-cols-3">
-          {trustPoints.map(([title, detail]) => (
-            <div key={title} className="flex gap-3 bg-white px-5 py-5">
-              <ShieldCheck className="mt-0.5 size-5 shrink-0 text-[#A9782F]" aria-hidden="true" />
-              <p><span className="block text-sm font-semibold text-[#132A46]">{title}</span><span className="mt-1 block text-xs leading-5 text-[#5F6875]">{detail}</span></p>
+      <section id="hotel" className="site-anchor bg-[#F8F7F3] py-24 sm:py-30" aria-labelledby="about-title">
+        <div className="site-container">
+          <div className="grid gap-12 lg:grid-cols-[.9fr_1.1fr] lg:items-center">
+            <div className="relative min-h-[430px] overflow-hidden">
+              <Image unoptimized src={aboutPhotograph.src} alt={aboutPhotograph.alt} fill sizes="(min-width: 1024px) 45vw, 100vw" className="object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#132A46]/45 via-transparent to-transparent" />
             </div>
-          ))}
-        </div>
-      </section>
-
-      <section id="hotel" className="site-anchor bg-[#F8F7F3] py-24 sm:py-30">
-        <div className="site-container grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:items-end">
-          <div>
-            <p className="eyebrow text-[#A06F29]">Welcome to Aurelia House</p>
-            <h2 className="mt-4 font-heading text-5xl leading-[1.02] text-[#132A46] sm:text-6xl">
-              Heritage character, made effortless.
-            </h2>
-          </div>
-          <div className="grid gap-5 text-lg leading-8 text-[#5F6875] sm:grid-cols-2">
-            <p>Aurelia House is a small independent hotel built around generous rooms, garden light, and the warm rhythm of its lakeside neighbourhood.</p>
-            <p>Guests receive direct help from the house team, transparent room rates, and a booking request they can follow from submission to confirmation.</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-[#D9DEE5] bg-[#E9EDF1] py-20" aria-labelledby="booking-process-title">
-        <div className="site-container">
-          <p className="eyebrow text-[#A06F29]">A clear booking process</p>
-          <h2 id="booking-process-title" className="mt-4 max-w-2xl font-heading text-4xl text-[#132A46] sm:text-5xl">From available room to confirmed stay.</h2>
-          <div className="mt-10 grid gap-px border border-[#CDD4DC] bg-[#CDD4DC] md:grid-cols-3">
-            {bookingSteps.map(([number, title, detail]) => (
-              <article key={number} className="bg-[#F8F7F3] p-7">
-                <p className="font-mono text-xs font-bold text-[#A06F29]">{number}</p>
-                <h3 className="mt-7 text-xl font-semibold text-[#132A46]">{title}</h3>
-                <p className="mt-3 text-sm leading-6 text-[#5F6875]">{detail}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white py-24 sm:py-30" aria-labelledby="featured-rooms-title">
-        <div className="site-container">
-          <div className="flex flex-col justify-between gap-7 sm:flex-row sm:items-end">
             <div>
-              <p className="eyebrow text-[#A06F29]">Rest well</p>
-              <h2 id="featured-rooms-title" className="mt-4 font-heading text-5xl text-[#132A46] sm:text-6xl">
-                Live rooms, clearly presented.
-              </h2>
-              <p className="mt-4 max-w-2xl text-[#5F6875]">Compare capacity, room size, current inventory, and the nightly rate before opening the full details.</p>
+              <p className="eyebrow text-[#A06F29]">About Aurelia House</p>
+              <h2 id="about-title" className="mt-4 font-heading text-5xl leading-[1.02] text-[#132A46] sm:text-6xl">Heritage character, made effortless.</h2>
+              <div className="mt-7 grid gap-5 text-base leading-8 text-[#5F6875] sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <p>Aurelia House is a small independent hotel built around generous rooms, garden light, and the warm rhythm of its lakeside neighbourhood.</p>
+                <p>Guests receive direct help from the house team, transparent room rates, and a booking request they can follow from submission to confirmation.</p>
+              </div>
             </div>
-            <Link href="/rooms" className="inline-flex items-center gap-2 font-semibold text-[#132A46] underline decoration-[#C59A52] decoration-2 underline-offset-8">
-              View all rooms <ArrowRight className="size-4" />
-            </Link>
           </div>
-          {catalog?.items.length ? (
-            <div className="mt-12 grid gap-7 lg:grid-cols-3">
-              {catalog.items.map((room, index) => <RoomCard key={room.slug} room={room} index={index} />)}
-            </div>
-          ) : (
-            <div className="mt-12 border border-[#D9DEE5] bg-[#F8F7F3] p-8 text-center text-[#5F6875]">
-              Room details are taking a short break. Please try again soon.
-            </div>
-          )}
-        </div>
-      </section>
 
-      <section className="bg-[#E9EDF1] py-24" aria-labelledby="facilities-title">
-        <div className="site-container">
-          <div className="max-w-2xl">
-            <p className="eyebrow text-[#A06F29]">Everything you need</p>
-            <h2 id="facilities-title" className="mt-4 font-heading text-5xl text-[#132A46]">Comfort, considered.</h2>
-          </div>
-          <div className="mt-12 grid gap-px border border-[#CDD4DC] bg-[#CDD4DC] sm:grid-cols-2 lg:grid-cols-4">
-            {displayedFacilities.map(({ name, description, icon: Icon }) => (
-              <article key={name} className="bg-[#F8F7F3] p-7">
-                <Icon className="size-6 text-[#A9782F]" />
-                <h3 className="mt-8 font-heading text-2xl text-[#132A46]">{name}</h3>
-                <p className="mt-3 text-sm leading-6 text-[#5F6875]">{description}</p>
-              </article>
-            ))}
+          <div className="mt-20 border-t border-[#D9DEE5] pt-12">
+            <div className="max-w-2xl">
+              <p className="eyebrow text-[#A06F29]">Facilities</p>
+              <h3 className="mt-4 font-heading text-4xl text-[#132A46] sm:text-5xl">Comfort, considered.</h3>
+              <p className="mt-4 text-[#5F6875]">The essentials are handled with care, leaving you free to settle in and enjoy the house at your own pace.</p>
+            </div>
+            <div className="mt-10 grid gap-px border border-[#CDD4DC] bg-[#CDD4DC] sm:grid-cols-2 lg:grid-cols-4">
+              {displayedFacilities.map(({ name, description, icon: Icon }) => (
+                <article key={name} className="bg-white p-7">
+                  <Icon className="size-6 text-[#A9782F]" aria-hidden="true" />
+                  <h4 className="mt-8 font-heading text-2xl text-[#132A46]">{name}</h4>
+                  <p className="mt-3 text-sm leading-6 text-[#5F6875]">{description}</p>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="gallery" className="site-anchor bg-[#F8F7F3] py-24 sm:py-30" aria-labelledby="gallery-title">
-        <div className="site-container">
-          <div className="grid gap-6 lg:grid-cols-[1fr_.7fr] lg:items-end">
-            <div>
-              <p className="eyebrow text-[#A06F29]">Gallery</p>
-              <h2 id="gallery-title" className="mt-4 font-heading text-5xl text-[#132A46] sm:text-6xl">A closer look at the house.</h2>
-            </div>
-            <p className="text-lg leading-8 text-[#5F6875]">Quiet corners, considered rooms, and the garden light that gives every stay its own rhythm.</p>
-          </div>
-          <div className="mt-12 grid auto-rows-[220px] gap-4 md:grid-cols-4">
-            {hotelPhotographs.map((photograph, index) => (
-              <figure key={photograph.file} className={`group relative overflow-hidden ${index === 0 ? "md:col-span-2 md:row-span-2" : ""}`}>
-                <Image unoptimized src={photograph.src} alt={photograph.alt} fill sizes={index === 0 ? "(min-width: 768px) 50vw, 100vw" : "(min-width: 768px) 25vw, 100vw"} className="object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#132A46]/75 via-transparent to-transparent" />
-                <figcaption className="absolute inset-x-6 bottom-5 text-sm font-semibold text-white drop-shadow">{photograph.caption}</figcaption>
-              </figure>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="contact" className="site-anchor bg-[#132A46] py-24 text-white" aria-labelledby="contact-title">
-        <div className="site-container grid gap-14 lg:grid-cols-[1.1fr_.9fr]">
-          <div>
-            <p className="eyebrow text-[#D7B571]">Contact</p>
-            <h2 id="contact-title" className="mt-4 max-w-xl font-heading text-5xl leading-[1.03] sm:text-6xl">Let’s make your stay feel easy.</h2>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-white/70">Questions, special occasions, or local recommendations—our house team is here every day.</p>
-            <Link href="/contact" className="mt-8 inline-flex min-h-12 items-center gap-3 bg-[#C59A52] px-6 font-semibold text-[#132A46]">
-              Send an enquiry <ArrowRight className="size-4" />
-            </Link>
-          </div>
-          <address className="grid gap-6 border-l border-white/15 pl-0 not-italic sm:grid-cols-2 lg:grid-cols-1 lg:pl-10">
-            <p className="flex gap-4 text-white/75"><MapPin className="mt-1 size-5 shrink-0 text-[#D7B571]" /><span>14 Willow Lane<br />Lakeside Quarter</span></p>
-            <p className="flex gap-4 text-white/75"><Phone className="size-5 shrink-0 text-[#D7B571]" /><span>+91 80000 12345</span></p>
-            <p className="flex gap-4 text-white/75"><Mail className="size-5 shrink-0 text-[#D7B571]" /><span>stay@aureliahouse.com</span></p>
-            <p className="flex gap-4 text-white/75"><Clock3 className="size-5 shrink-0 text-[#D7B571]" /><span>House team available daily<br />7:00 AM–11:00 PM</span></p>
-          </address>
-        </div>
-      </section>
-
-      <section className="bg-[#C59A52] py-18 text-[#132A46]">
+      <section className="bg-[#C59A52] py-18 text-[#132A46]" aria-labelledby="home-cta-title">
         <div className="site-container flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
           <div>
-            <p className="eyebrow flex items-center gap-2"><Sparkles className="size-4" /> Your stay starts here</p>
-            <h2 className="mt-3 font-heading text-4xl sm:text-5xl">Come away for a while.</h2>
+            <p className="eyebrow flex items-center gap-2"><Sparkles className="size-4" aria-hidden="true" /> Your stay starts here</p>
+            <h2 id="home-cta-title" className="mt-3 font-heading text-4xl sm:text-5xl">Come away for a while.</h2>
           </div>
           <Link href="/rooms" className="inline-flex min-h-13 items-center gap-3 bg-[#132A46] px-7 font-semibold text-white">
             Book Your Stay <ArrowRight className="size-5" />

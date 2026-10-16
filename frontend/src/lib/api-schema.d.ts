@@ -277,6 +277,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/users/visitors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Visitors */
+        get: operations["list_visitors_api_v1_admin_users_visitors_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/users/administrators": {
         parameters: {
             query?: never;
@@ -710,6 +727,36 @@ export interface components {
             /** Is Active */
             is_active: boolean;
         };
+        /** AdminVisitor */
+        AdminVisitor: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Emails */
+            emails: string[];
+            /** Full Name */
+            full_name: string;
+            /** Phone */
+            phone: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Account Count */
+            account_count: number;
+            /** Bookings */
+            bookings: components["schemas"]["BookingResponse"][];
+        };
         /** AuthenticatedUser */
         AuthenticatedUser: {
             /**
@@ -911,6 +958,8 @@ export interface components {
              * @default true
              */
             is_active: boolean;
+            /** Facility Ids */
+            facility_ids?: string[];
             /**
              * Id
              * Format: uuid
@@ -941,6 +990,8 @@ export interface components {
              * @default true
              */
             is_active: boolean;
+            /** Facility Ids */
+            facility_ids?: string[];
         };
         /** DashboardSummary */
         DashboardSummary: {
@@ -1974,6 +2025,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminUser"][];
+                };
+            };
+        };
+    };
+    list_visitors_api_v1_admin_users_visitors_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminVisitor"][];
                 };
             };
         };

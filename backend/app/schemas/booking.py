@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
+from app.schemas.timestamps import as_utc
+
 
 class BookingCreate(BaseModel):
     category_id: UUID
@@ -52,6 +54,11 @@ class BookingResponse(BaseModel):
     status: str
     special_requests: str | None
     created_at: datetime
+
+    @field_validator("created_at")
+    @classmethod
+    def normalize_created_at(cls, value: datetime) -> datetime:
+        return as_utc(value)
 
 
 class BookingListResponse(BaseModel):

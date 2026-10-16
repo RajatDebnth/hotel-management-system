@@ -12,9 +12,11 @@ from app.db.session import get_db_session
 from app.schemas.auth import (
     AdminCreateRequest,
     AdminUser,
+    AdminVisitor,
     AuthenticatedUser,
     RoleUpdateRequest,
 )
+from app.services.bookings import BOOKING_SELECT, booking_values
 
 router = APIRouter(prefix="/admin/users", tags=["admin users"])
 
@@ -35,6 +37,59 @@ async def list_users(
         .all()
     )
     return [AdminUser.model_validate(row) for row in rows]
+
+
+@router.get("/visitors", response_model=list[AdminVisitor])
+async def list_visitors(
+    _: Annotated[AuthenticatedUser, Depends(require_admin)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> list[AdminVisitor]:
+    visitor_rows = (
+        await session.execute(
+            text("""select id, email, full_name, phone, is_active, created_at
+                from profiles where role = 'customer' and email is not null
+                order by created_at, lower(email)""")
+        )
+    ).mappings().all()
+    booking_rows = (
+        await session.execute(
+            text(f"""select b.user_id, booking.* from ({BOOKING_SELECT}) as booking
+                join bookings b on b.id = booking.id
+                join profiles p on p.id = b.user_id
+                where p.role = 'customer'
+                order by booking.created_at desc""")
+        )
+    ).mappings().all()
+    bookings_by_visitor: dict[str, list[object]] = {}
+    for row in booking_rows:
+        bookings_by_visitor.setdefault(str(row["user_id"]), []).append(
+            booking_values(row)
+        )
+    visitors_by_name: dict[str, dict[str, object]] = {}
+    for row in visitor_rows:
+        name_key = " ".join(row["full_name"].casefold().split())
+        visitor = visitors_by_name.get(name_key)
+        if visitor is None:
+            visitors_by_name[name_key] = {
+                **row,
+                "emails": [row["email"]],
+                "account_count": 1,
+                "bookings": list(bookings_by_visitor.get(str(row["id"]), [])),
+            }
+            continue
+        visitor["emails"].append(row["email"])
+        visitor["account_count"] += 1
+        visitor["is_active"] = bool(visitor["is_active"] or row["is_active"])
+        if visitor["phone"] is None and row["phone"] is not None:
+            visitor["phone"] = row["phone"]
+        visitor["bookings"].extend(bookings_by_visitor.get(str(row["id"]), []))
+    return [
+        AdminVisitor.model_validate(visitor)
+        for visitor in sorted(
+            visitors_by_name.values(),
+            key=lambda item: (str(item["full_name"]).casefold(), str(item["email"]).casefold()),
+        )
+    ]
 
 
 @router.post(

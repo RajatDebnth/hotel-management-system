@@ -12,8 +12,8 @@ export default async function AdminUsersPage() {
     <main className="admin-page">
       <header className="border-b border-neutral-300 pb-7">
         <p className="admin-kicker">Access</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Users and administrators</h1>
-        <p className="mt-3 max-w-2xl text-base leading-7 text-neutral-500">Visitor accounts remain visitor-only. Create a separate account whenever a staff member needs administrator access.</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">People and access</h1>
+        <p className="mt-3 max-w-2xl text-base leading-7 text-neutral-500">Create and manage separate staff administrator accounts. Visitor records are available in their own read-only workspace.</p>
       </header>
       <div className="mt-8"><UserManager users={users} currentUserId={user.id} /></div>
     </main>

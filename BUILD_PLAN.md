@@ -125,7 +125,10 @@ Tracked demo images are copied into runtime storage during idempotent startup se
 
 ### Public/customer
 
+- Focused landing page with the booking hero, combined hotel story/facilities, booking CTA,
+  and shared footer; Rooms and Contact remain dedicated standalone pages
 - Responsive public hotel pages and active catalog
+- Five ordered photographs per seeded room category, presented on the matching room-detail page
 - Search and filters for stay dates, guests, category, keyword, and price
 - Registration, login, logout, session restoration, password change
 - Profile read/update
@@ -173,4 +176,11 @@ Security-sensitive work reviews cookie/session handling, authorization, origin c
   managed facilities, and graceful offline presentation.
 - Step 36 adapted proven PMS information architecture into an original daily administrator
   operations dashboard and protected aggregate snapshot without importing third-party code.
+- Step 37 reduced the public landing page to the existing booking hero, combined About and
+  API-backed facilities content, one booking CTA, and the footer while preserving standalone
+  hotel-information routes.
+- Step 38 retired the standalone About route and its homepage link; the hotel story remains
+  fully represented inside the homepage About/facilities section.
+- Step 39 retired the generic Gallery route, promoted Rooms in public navigation, and added
+  five category-specific photographs plus an on-page image gallery to every seeded room type.
 - Payment Steps 15 and 16 remain paused until the user explicitly resumes them.

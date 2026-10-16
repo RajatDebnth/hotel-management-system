@@ -61,9 +61,22 @@ async def inventory(session: AsyncSession) -> InventoryResponse:
         select id, room_id, category_id, storage_path, alt_text, sort_order, is_cover
         from room_images order by category_id, room_id, sort_order, created_at
     """))).mappings().all()
+    facility_links = (await session.execute(text("""
+        select category_id, facility_id from room_category_facilities
+        order by category_id, facility_id
+    """))).mappings().all()
+    facility_ids_by_category: dict[str, list[UUID]] = {}
+    for link in facility_links:
+        facility_ids_by_category.setdefault(str(link["category_id"]), []).append(
+            UUID(str(link["facility_id"]))
+        )
     return InventoryResponse(
         categories=[
-            CategoryAdmin.model_validate({**row, "base_price": from_paise(row["base_price"])})
+            CategoryAdmin.model_validate({
+                **row,
+                "base_price": from_paise(row["base_price"]),
+                "facility_ids": facility_ids_by_category.get(str(row["id"]), []),
+            })
             for row in categories
         ],
         rooms=[RoomAdmin.model_validate(row) for row in rooms],
@@ -82,7 +95,9 @@ async def write_record(
     if table not in allowed:
         raise ValueError("Unsupported inventory table")
     values = model.model_dump()
+    facility_ids: list[UUID] = []
     if table == "room_categories":
+        facility_ids = values.pop("facility_ids")
         values["base_price"] = to_paise(values["base_price"])
         if values["room_size_sq_m"] is not None:
             values["room_size_sq_m"] = float(values["room_size_sq_m"])
@@ -103,6 +118,17 @@ async def write_record(
         result = (await session.execute(query, values)).scalar_one_or_none()
         if result is None:
             raise HTTPException(status_code=404, detail="Inventory record not found")
+        if table == "room_categories":
+            await session.execute(
+                text("delete from room_category_facilities where category_id = :category_id"),
+                {"category_id": result},
+            )
+            for facility_id in dict.fromkeys(facility_ids):
+                await session.execute(
+                    text("""insert into room_category_facilities (category_id, facility_id)
+                        values (:category_id, :facility_id)"""),
+                    {"category_id": result, "facility_id": facility_id},
+                )
         await session.commit()
         return UUID(str(result))
     except IntegrityError as error:

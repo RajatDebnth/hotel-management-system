@@ -23,12 +23,11 @@ const users = [
 ] as AdminUser[];
 
 describe("UserManager", () => {
-  it("keeps visitors read-only and creates administrators separately", async () => {
+  it("keeps visitor records out of access management and creates administrators separately", async () => {
     render(<UserManager users={users} currentUserId="admin-1" />);
 
     expect(screen.queryByRole("button", { name: "Make administrator" })).not.toBeInTheDocument();
-    expect(screen.getByText("Visitor accounts cannot be promoted to administrator.")).toBeVisible();
-    expect(screen.getByText("Aarav Sharma")).toBeVisible();
+    expect(screen.queryByText("Aarav Sharma")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remove administrator access" })).toBeVisible();
 
     fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Front Office Manager" } });

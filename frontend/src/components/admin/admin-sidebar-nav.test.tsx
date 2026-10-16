@@ -22,7 +22,8 @@ describe("AdminSidebarNav", () => {
 
     expect(screen.getByRole("link", { name: "Today" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Rooms & inventory" })).not.toHaveAttribute("aria-current");
-    expect(screen.getByRole("link", { name: "Reservations" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Bookings" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Enquiries" })).not.toHaveAttribute("aria-current");
   });
 
   it("keeps a section active on its nested routes", () => {
@@ -31,5 +32,13 @@ describe("AdminSidebarNav", () => {
 
     expect(screen.getByRole("link", { name: "Rooms & inventory" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Today" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("keeps bookings and enquiries as separate active destinations", () => {
+    usePathname.mockReturnValue("/admin/enquiries");
+    render(<AdminSidebarNav />);
+
+    expect(screen.getByRole("link", { name: "Enquiries" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Bookings" })).not.toHaveAttribute("aria-current");
   });
 });

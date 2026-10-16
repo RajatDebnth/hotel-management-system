@@ -12,7 +12,6 @@ export function UserManager({ users, currentUserId }: { users: AdminUser[]; curr
   const [message, setMessage] = useState("");
 
   const administrators = users.filter((user) => user.role === "admin");
-  const visitors = users.filter((user) => user.role === "customer");
 
   async function addAdministrator(form: HTMLFormElement) {
     const data = new FormData(form);
@@ -87,12 +86,6 @@ export function UserManager({ users, currentUserId }: { users: AdminUser[]; curr
           </div>
         </section>
 
-        <section className="admin-panel">
-          <header className="border-b border-neutral-200 p-5 sm:p-6"><p className="admin-kicker">Guest accounts</p><h2 className="mt-2 text-2xl font-semibold tracking-tight">Visitors <span className="font-mono text-base font-normal text-neutral-400">[{visitors.length}]</span></h2><p className="mt-2 text-sm text-neutral-500">Visitor accounts cannot be promoted to administrator.</p></header>
-          <div className="divide-y divide-neutral-200">
-            {visitors.map((user) => <article key={user.id} className="p-5 sm:p-6"><p className="font-semibold">{user.full_name}</p><p className="mt-1 text-sm text-neutral-500">{user.email}</p><p className="mt-2 text-xs font-bold uppercase tracking-wider text-neutral-600">Visitor · {user.is_active ? "active" : "inactive"}</p></article>)}
-          </div>
-        </section>
       </div>
     </div>
   );

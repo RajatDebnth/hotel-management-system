@@ -5,8 +5,20 @@ from pathlib import Path, PurePosixPath
 DEMO_ASSET_DIR = Path(__file__).resolve().parents[1] / "assets" / "demo"
 DEMO_FILES = {
     "deluxe-king.png": "demo/deluxe-king.png",
+    "deluxe-king-entrance.png": "demo/deluxe-king-entrance.png",
+    "deluxe-king-lounge.png": "demo/deluxe-king-lounge.png",
+    "deluxe-king-bathroom.png": "demo/deluxe-king-bathroom.png",
+    "deluxe-king-view.png": "demo/deluxe-king-view.png",
     "family-suite.png": "demo/family-suite.png",
+    "family-suite-entrance.png": "demo/family-suite-entrance.png",
+    "family-suite-lounge.png": "demo/family-suite-lounge.png",
+    "family-suite-bathroom.png": "demo/family-suite-bathroom.png",
+    "family-suite-view.png": "demo/family-suite-view.png",
     "garden-twin.png": "demo/garden-twin.png",
+    "garden-twin-entrance.png": "demo/garden-twin-entrance.png",
+    "garden-twin-lounge.png": "demo/garden-twin-lounge.png",
+    "garden-twin-bathroom.png": "demo/garden-twin-bathroom.png",
+    "garden-twin-view.png": "demo/garden-twin-view.png",
 }
 
 

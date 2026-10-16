@@ -14,9 +14,9 @@ type Viewer = {
 };
 
 const sectionLinks = [
-  ["Home", "home"],
-  ["Gallery", "gallery"],
-  ["Contact", "contact"],
+  ["Home", "/"],
+  ["Rooms", "/rooms"],
+  ["Contact", "/contact"],
 ] as const;
 
 const customerLinks = [
@@ -104,7 +104,6 @@ function ProfileMenu({ viewer }: { viewer: Viewer }) {
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const [activeSection, setActiveSection] = useState("home");
   const [viewer, setViewer] = useState<Viewer | null>(null);
 
   useEffect(() => {
@@ -122,24 +121,6 @@ export function SiteHeader() {
     return () => controller.abort();
   }, [pathname]);
 
-  useEffect(() => {
-    if (pathname !== "/" || typeof IntersectionObserver === "undefined") return;
-    const sections = sectionLinks
-      .map(([, id]) => document.getElementById(id))
-      .filter((section): section is HTMLElement => Boolean(section));
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
-        if (visible?.target.id) setActiveSection(visible.target.id);
-      },
-      { rootMargin: "-24% 0px -62%", threshold: [0, 0.2, 0.6] },
-    );
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, [pathname]);
-
   return (
     <header className="sticky inset-x-0 top-0 z-50 border-b border-[#D9DEE5] bg-[#F8F7F3]/95 text-[#132A46] backdrop-blur-xl">
       <div className="site-container flex h-18 items-center justify-between gap-5">
@@ -152,12 +133,12 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main navigation">
-          {sectionLinks.map(([label, id]) => {
-            const active = pathname === "/" && activeSection === id;
+          {sectionLinks.map(([label, href]) => {
+            const active = pathname === href;
             return (
               <Link
-                key={id}
-                href={`/#${id}`}
+                key={href}
+                href={href}
                 aria-current={active ? "page" : undefined}
                 className={`border-b-2 px-4 py-2 text-sm font-semibold transition-colors ${
                   active
@@ -198,10 +179,10 @@ export function SiteHeader() {
             className="absolute right-0 mt-3 w-64 border border-[#D9DEE5] bg-[#F8F7F3] p-3 shadow-2xl shadow-[#132A46]/15"
             aria-label="Mobile navigation"
           >
-            {sectionLinks.map(([label, id]) => (
+            {sectionLinks.map(([label, href]) => (
               <Link
-                key={id}
-                href={`/#${id}`}
+                key={href}
+                href={href}
                 className="block border-b border-[#E5E8EC] px-3 py-3 text-sm font-semibold text-[#405066] last:border-0 hover:bg-white hover:text-[#132A46]"
               >
                 {label}

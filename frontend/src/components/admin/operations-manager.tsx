@@ -15,7 +15,7 @@ const enquiryTransitions: Record<string, string[]> = {
   resolved: ["in_progress", "closed"], closed: [],
 };
 
-export function OperationsManager({ bookings, enquiries, admins }: { bookings: AdminBookingList; enquiries: AdminEnquiryList; admins: AdminOption[] }) {
+export function OperationsManager({ bookings, enquiries, admins = [] }: { bookings?: AdminBookingList; enquiries?: AdminEnquiryList; admins?: AdminOption[] }) {
   const router = useRouter();
   const [pending, setPending] = useState("");
   const [message, setMessage] = useState("");
@@ -30,14 +30,14 @@ export function OperationsManager({ bookings, enquiries, admins }: { bookings: A
   return (
     <div className="grid gap-10">
       {message && <p className="border border-neutral-300 bg-white p-3 text-sm" role="status">{message}</p>}
-      <Queue title="Bookings" total={bookings.total} kind="booking" statuses={["pending", "confirmed", "checked_in", "checked_out", "cancelled", "rejected"]}>
+      {bookings && <Queue title="Bookings" total={bookings.total} kind="booking" statuses={["pending", "confirmed", "checked_in", "checked_out", "cancelled", "rejected"]}>
         {bookings.items.length === 0 ? <Empty /> : bookings.items.map((item) => <article key={item.id} className="border-t border-neutral-200 py-6 first:border-t-0"><div className="flex flex-col gap-3 sm:flex-row sm:justify-between"><div><p className="font-semibold">{item.booking_reference} · {item.guest_name}</p><p className="mt-1 text-sm text-neutral-500">{item.category_name}, room {item.room_number} · {item.check_in} → {item.check_out}</p></div><Status value={item.status} /></div>{bookingTransitions[item.status]?.length ? <form className="mt-4 grid gap-3 sm:grid-cols-[180px_1fr_auto]" onSubmit={(e) => { e.preventDefault(); const form = new FormData(e.currentTarget); act(item.id, () => updateAdminBooking(item.id, String(form.get("status")), String(form.get("reason")))); }}><select name="status" aria-label={`New status for ${item.booking_reference}`} className="field">{bookingTransitions[item.status].map((value) => <option key={value}>{value}</option>)}</select><input name="reason" aria-label={`Reason for changing ${item.booking_reference}`} required minLength={3} maxLength={500} placeholder="Reason for status change" className="field" /><button disabled={pending === item.id} className="admin-primary-button">Update</button></form> : <p className="mt-3 text-sm text-neutral-500">Final status—no further transitions.</p>}</article>)}
         <Pagination page={bookings.page} pages={bookings.pages} kind="booking" />
-      </Queue>
-      <Queue title="Enquiries" total={enquiries.total} kind="enquiry" statuses={["new", "in_progress", "resolved", "closed"]}>
+      </Queue>}
+      {enquiries && <Queue title="Enquiries" total={enquiries.total} kind="enquiry" statuses={["new", "in_progress", "resolved", "closed"]}>
         {enquiries.items.length === 0 ? <Empty /> : enquiries.items.map((item) => <article key={item.id} className="border-t border-neutral-200 py-6 first:border-t-0"><div className="flex flex-col gap-3 sm:flex-row sm:justify-between"><div><p className="font-semibold">{item.subject}</p><p className="mt-1 text-sm text-neutral-500">{item.name} · {item.email}</p></div><Status value={item.status} /></div><p className="mt-4 border-l-2 border-neutral-950 bg-neutral-50 p-4 text-sm leading-6 text-neutral-700">{item.message}</p><form className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={(e) => submitEnquiry(e, item, act)}><label className="grid gap-2 text-sm font-semibold">Status<select name="status" defaultValue={item.status} className="field"><option value={item.status}>{item.status}</option>{enquiryTransitions[item.status]?.map((value) => <option key={value}>{value}</option>)}</select></label><label className="grid gap-2 text-sm font-semibold">Assigned administrator<select name="assigned_to" defaultValue={item.assigned_to ?? ""} className="field"><option value="">Unassigned</option>{admins.map((admin) => <option key={admin.id} value={admin.id}>{admin.full_name || "Administrator"}</option>)}</select></label><label className="grid gap-2 text-sm font-semibold sm:col-span-2">Internal notes<textarea name="admin_notes" defaultValue={item.admin_notes ?? ""} maxLength={5000} rows={3} className="field" /></label><button disabled={pending === item.id} className="admin-primary-button w-fit">Save enquiry</button></form></article>)}
         <Pagination page={enquiries.page} pages={enquiries.pages} kind="enquiry" />
-      </Queue>
+      </Queue>}
     </div>
   );
 }

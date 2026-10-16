@@ -91,6 +91,7 @@ async def test_local_auth_sessions_passwords_csrf_and_roles(tmp_path: Path) -> N
 
             forbidden_admin = await client.get("/api/v1/admin/users")
             assert forbidden_admin.status_code == 403
+            assert (await client.get("/api/v1/admin/users/visitors")).status_code == 403
             forbidden_admin_creation = await client.post(
                 "/api/v1/admin/users/administrators",
                 headers={"Origin": FRONTEND_ORIGIN},
@@ -163,6 +164,21 @@ async def test_local_auth_sessions_passwords_csrf_and_roles(tmp_path: Path) -> N
                 "admin@example.com",
                 "customer@example.com",
             }
+            visitors = await client.get("/api/v1/admin/users/visitors")
+            assert visitors.status_code == 200
+            assert visitors.json() == [
+                {
+                    "id": customer_id,
+                    "email": "customer@example.com",
+                    "emails": ["customer@example.com"],
+                    "full_name": "Local Customer",
+                    "phone": None,
+                    "is_active": True,
+                    "created_at": visitors.json()[0]["created_at"],
+                    "account_count": 1,
+                    "bookings": [],
+                }
+            ]
 
             self_change = await client.patch(
                 f"/api/v1/admin/users/{admin_login.json()['id']}/role",

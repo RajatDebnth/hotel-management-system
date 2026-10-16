@@ -14,6 +14,7 @@ class CategoryWrite(BaseModel):
     bed_type: str = Field(min_length=1, max_length=100)
     room_size_sq_m: Decimal | None = Field(default=None, gt=0)
     is_active: bool = True
+    facility_ids: list[UUID] = Field(default_factory=list)
 
 
 class CategoryAdmin(CategoryWrite):
